@@ -1,0 +1,17 @@
+{
+  "name": "planning-poker-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "redis": "^4.6.10",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1"
+  }
+}
+

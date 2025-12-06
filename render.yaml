@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: planning-poker
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: planning-poker-redis
+          property: connectionString
+      - key: CLIENT_URL
+        value: https://planning-poker.onrender.com
+      - key: NODE_ENV
+        value: production
+    healthCheckPath: /
+    autoDeploy: true
+
+databases:
+  - name: planning-poker-redis
+    plan: free
+    type: redis
+    maxmemoryPolicy: allkeys-lru
+
