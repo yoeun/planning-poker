@@ -62,19 +62,27 @@ export default function VotingCards({
         })}
       </div>
 
-      {allChosen && (
-        <div className="pt-6 border-t border-gray-200">
+      <div className="pt-6 border-t border-gray-200">
+        {allChosen ? (
           <p className="text-gray-600 text-sm mb-4 text-center">
             All participants have made their choices!
           </p>
-          <button
-            onClick={onReveal}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition"
-          >
-            Reveal All Choices
-          </button>
-        </div>
-      )}
+        ) : (
+          <p className="text-amber-600 text-sm mb-4 text-center">
+            {chosenCount} of {totalUsers} participants have chosen. You can reveal choices manually.
+          </p>
+        )}
+        <button
+          onClick={onReveal}
+          className={`w-full font-semibold py-3 px-4 rounded-lg shadow-md transition ${
+            allChosen
+              ? 'bg-green-600 hover:bg-green-700 text-white'
+              : 'bg-amber-500 hover:bg-amber-600 text-white'
+          }`}
+        >
+          Reveal All Choices
+        </button>
+      </div>
     </div>
   );
 }
