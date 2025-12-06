@@ -37,6 +37,7 @@ export default function Session() {
   const [email, setEmail] = useState('');
   const [showJoinForm, setShowJoinForm] = useState(false);
   const socketRef = useRef<Socket | null>(null);
+  const isJoiningRef = useRef<boolean>(false);
 
   useEffect(() => {
     const savedUserData = getUserData();
@@ -131,6 +132,11 @@ export default function Session() {
   }, [sessionId, navigate]);
 
   const handleJoinSession = () => {
+    // Prevent concurrent executions using ref (synchronous check)
+    if (isJoiningRef.current || loading) {
+      return;
+    }
+
     if (!name.trim()) {
       setError('Please enter your name');
       return;
@@ -139,6 +145,15 @@ export default function Session() {
     if (!sessionId) {
       setError('Invalid session ID');
       return;
+    }
+
+    // Mark as joining immediately (synchronous)
+    isJoiningRef.current = true;
+
+    // Clean up any existing socket connection before creating a new one
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+      socketRef.current = null;
     }
 
     const userId = getUserData()?.userId || generateUserId();
@@ -202,9 +217,11 @@ export default function Session() {
         });
 
         setLoading(false);
+        isJoiningRef.current = false;
       } catch (err) {
         setError('Session not found');
         setLoading(false);
+        isJoiningRef.current = false;
         console.error(err);
       }
     };
@@ -450,4 +467,3 @@ export default function Session() {
     </div>
   );
 }
-
