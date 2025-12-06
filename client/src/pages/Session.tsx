@@ -6,6 +6,8 @@ import { getUserData, saveUserData, generateUserId, UserData } from '../utils/st
 import UserList from '../components/UserList';
 import VotingCards from '../components/VotingCards';
 import Results from '../components/Results';
+import Modal from '../components/Modal';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 const POINT_OPTIONS = ['?', '0.5', '1', '1.5', '2', '2.5', '3+'];
 const API_URL = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:3001' : window.location.origin);
@@ -133,24 +135,6 @@ export default function Session() {
     };
   }, [sessionId, navigate]);
 
-  // Handle Escape key to close modals
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (showEndSessionConfirm) {
-          setShowEndSessionConfirm(false);
-        }
-        if (showDeleteConfirm) {
-          setShowDeleteConfirm(false);
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleEscape);
-    return () => {
-      window.removeEventListener('keydown', handleEscape);
-    };
-  }, [showEndSessionConfirm, showDeleteConfirm]);
 
   const handleJoinSession = () => {
     // Prevent concurrent executions using ref (synchronous check)
@@ -580,77 +564,47 @@ export default function Session() {
       </div>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-          onClick={() => setShowDeleteConfirm(false)}
-        >
-          <div 
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 max-w-md w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Delete Session?</h3>
-            <p className="text-gray-600 mb-6">
-              This will permanently delete the session. All users will be disconnected.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title="Delete Session?"
+        message="This will permanently delete the session. All users will be disconnected."
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmButtonStyle="danger"
+      />
 
       {/* End Session and Create New Confirmation Modal */}
-      {showEndSessionConfirm && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-          onClick={() => setShowEndSessionConfirm(false)}
-        >
-          <div 
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 max-w-md w-full relative"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Modal
+        isOpen={showEndSessionConfirm}
+        onClose={() => setShowEndSessionConfirm(false)}
+      >
+        <Modal.Header showCloseButton={true} onClose={() => setShowEndSessionConfirm(false)}>
+          <h3 className="text-xl font-bold text-gray-900">Create New Session</h3>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="text-gray-600">
+            Would you like to end the current session? Ending it will disconnect all other participants.
+          </p>
+        </Modal.Body>
+        <Modal.Footer>
+          <div className="flex flex-col gap-3">
             <button
-              onClick={() => setShowEndSessionConfirm(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
-              aria-label="Close"
+              onClick={handleEndSessionAndCreateNew}
+              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              Yes
             </button>
-            <h3 className="text-xl font-bold text-gray-900 mb-4 pr-8">Create New Session</h3>
-            <p className="text-gray-600 mb-6">
-              Would you like to end the current session? Ending it will disconnect all other participants.
-            </p>
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={handleEndSessionAndCreateNew}
-                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
-              >
-                Yes
-              </button>
-              <button
-                onClick={handleKeepSessionAndCreateNew}
-                className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg transition"
-              >
-                No, keep current session
-              </button>
-            </div>
+            <button
+              onClick={handleKeepSessionAndCreateNew}
+              className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg transition"
+            >
+              No, keep current session
+            </button>
           </div>
-        </div>
-      )}
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }
