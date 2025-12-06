@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
-import { getSession, deleteSession } from '../utils/api';
+import { getSession, deleteSession, createSession } from '../utils/api';
 import { getUserData, saveUserData, generateUserId, UserData } from '../utils/storage';
 import UserList from '../components/UserList';
 import VotingCards from '../components/VotingCards';
@@ -33,6 +33,8 @@ export default function Session() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEndSessionConfirm, setShowEndSessionConfirm] = useState(false);
+  const [sessionEnded, setSessionEnded] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [showJoinForm, setShowJoinForm] = useState(false);
@@ -107,7 +109,7 @@ export default function Session() {
         });
 
         newSocket.on('sessionDeleted', () => {
-          navigate('/');
+          setSessionEnded(true);
         });
 
         newSocket.on('error', (data: { message: string }) => {
@@ -130,6 +132,25 @@ export default function Session() {
       }
     };
   }, [sessionId, navigate]);
+
+  // Handle Escape key to close modals
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showEndSessionConfirm) {
+          setShowEndSessionConfirm(false);
+        }
+        if (showDeleteConfirm) {
+          setShowDeleteConfirm(false);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [showEndSessionConfirm, showDeleteConfirm]);
 
   const handleJoinSession = () => {
     // Prevent concurrent executions using ref (synchronous check)
@@ -209,7 +230,7 @@ export default function Session() {
         });
 
         newSocket.on('sessionDeleted', () => {
-          navigate('/');
+          setSessionEnded(true);
         });
 
         newSocket.on('error', (data: { message: string }) => {
@@ -271,6 +292,91 @@ export default function Session() {
       navigate('/');
     } catch (err) {
       setError('Failed to delete session');
+      console.error(err);
+    }
+  };
+
+  const handleNewSession = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Allow ctrl+click (Windows/Linux) or cmd+click (Mac) to open home page in new tab
+    if (e.ctrlKey || e.metaKey || e.shiftKey) {
+      // Don't prevent default - let browser handle opening in new tab
+      return;
+    }
+
+    e.preventDefault();
+    
+    // Only create session if user data exists
+    const savedUserData = getUserData();
+    if (!savedUserData || !savedUserData.name.trim()) {
+      // If no user data, just navigate to home
+      navigate('/');
+      return;
+    }
+
+    // Show confirmation dialog to end current session
+    if (sessionId) {
+      setShowEndSessionConfirm(true);
+    } else {
+      // No current session, just create a new one
+      try {
+        const { sessionId: newSessionId } = await createSession();
+        navigate(`/session/${newSessionId}`);
+      } catch (err) {
+        setError('Failed to create new session');
+        console.error(err);
+      }
+    }
+  };
+
+  const handleEndSessionAndCreateNew = async () => {
+    if (!sessionId) return;
+    
+    setShowEndSessionConfirm(false);
+    
+    try {
+      // Delete current session (this will notify other users via socket)
+      await deleteSession(sessionId);
+      
+      // Create new session
+      const { sessionId: newSessionId } = await createSession();
+      navigate(`/session/${newSessionId}`);
+    } catch (err) {
+      setError('Failed to create new session');
+      console.error(err);
+    }
+  };
+
+  const handleKeepSessionAndCreateNew = async () => {
+    setShowEndSessionConfirm(false);
+    
+    const savedUserData = getUserData();
+    if (!savedUserData || !savedUserData.name.trim()) {
+      navigate('/');
+      return;
+    }
+
+    try {
+      const { sessionId: newSessionId } = await createSession();
+      // Open new session in a new tab/window
+      window.open(`/session/${newSessionId}`, '_blank');
+    } catch (err) {
+      setError('Failed to create new session');
+      console.error(err);
+    }
+  };
+
+  const handleCreateNewSessionAfterEnd = async () => {
+    const savedUserData = getUserData();
+    if (!savedUserData || !savedUserData.name.trim()) {
+      navigate('/');
+      return;
+    }
+
+    try {
+      const { sessionId: newSessionId } = await createSession();
+      navigate(`/session/${newSessionId}`);
+    } catch (err) {
+      setError('Failed to create new session');
       console.error(err);
     }
   };
@@ -368,6 +474,26 @@ export default function Session() {
 
   if (!session || !userData) return null;
 
+  // Show session ended message if session was deleted
+  if (sessionEnded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 w-full max-w-md">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Session Ended</h1>
+          <p className="text-gray-600 mb-8">
+            The session has been ended by the host. All participants have been disconnected.
+          </p>
+          <button
+            onClick={handleCreateNewSessionAfterEnd}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition"
+          >
+            Create New Session
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const currentUserChoice = session.choices[userData.userId];
   const allUsers = Object.keys(session.users);
   const allChosen = allUsers.every(uid => session.choices[uid] !== undefined);
@@ -385,6 +511,20 @@ export default function Session() {
               </p>
             </div>
             <div className="flex gap-3">
+              <a
+                href="/"
+                onClick={handleNewSession}
+                onAuxClick={(e) => {
+                  // Handle middle-click (button 1) - let it open in new tab
+                  if (e.button === 1) {
+                    // Don't prevent default, let the browser handle it
+                    return;
+                  }
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition"
+              >
+                New Session
+              </a>
               <button
                 onClick={handleReset}
                 className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg shadow-sm transition"
@@ -441,8 +581,14 @@ export default function Session() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 max-w-md w-full">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={() => setShowDeleteConfirm(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-xl font-bold text-gray-900 mb-4">Delete Session?</h3>
             <p className="text-gray-600 mb-6">
               This will permanently delete the session. All users will be disconnected.
@@ -459,6 +605,47 @@ export default function Session() {
                 className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* End Session and Create New Confirmation Modal */}
+      {showEndSessionConfirm && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={() => setShowEndSessionConfirm(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 max-w-md w-full relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowEndSessionConfirm(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
+              aria-label="Close"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h3 className="text-xl font-bold text-gray-900 mb-4 pr-8">Create New Session</h3>
+            <p className="text-gray-600 mb-6">
+              Would you like to end the current session? Ending it will disconnect all other participants.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleEndSessionAndCreateNew}
+                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
+              >
+                Yes
+              </button>
+              <button
+                onClick={handleKeepSessionAndCreateNew}
+                className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg transition"
+              >
+                No, keep current session
               </button>
             </div>
           </div>
