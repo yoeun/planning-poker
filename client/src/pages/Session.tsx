@@ -2,8 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import { getSession, deleteSession } from '../utils/api';
-import { getUserData, saveUserData, UserData } from '../utils/storage';
-import { getGravatarUrl } from '../utils/gravatar';
+import { getUserData, saveUserData, generateUserId, UserData } from '../utils/storage';
 import UserList from '../components/UserList';
 import VotingCards from '../components/VotingCards';
 import Results from '../components/Results';
@@ -34,7 +33,18 @@ export default function Session() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [showJoinForm, setShowJoinForm] = useState(false);
   const socketRef = useRef<Socket | null>(null);
+
+  useEffect(() => {
+    const savedUserData = getUserData();
+    if (savedUserData) {
+      setName(savedUserData.name);
+      setEmail(savedUserData.email);
+    }
+  }, []);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -46,7 +56,8 @@ export default function Session() {
 
       const savedUserData = getUserData();
       if (!savedUserData || !savedUserData.name.trim()) {
-        navigate('/');
+        setShowJoinForm(true);
+        setLoading(false);
         return;
       }
 
@@ -119,6 +130,88 @@ export default function Session() {
     };
   }, [sessionId, navigate]);
 
+  const handleJoinSession = () => {
+    if (!name.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+
+    if (!sessionId) {
+      setError('Invalid session ID');
+      return;
+    }
+
+    const userId = getUserData()?.userId || generateUserId();
+    const userData: UserData = { name: name.trim(), email: email.trim(), userId };
+    saveUserData(userData);
+    setUserData(userData);
+    setShowJoinForm(false);
+    setError('');
+    setLoading(true);
+
+    // Now load the session
+    const loadSession = async () => {
+      try {
+        const sessionData = await getSession(sessionId);
+        setSession(sessionData);
+
+        // Connect to socket
+        const newSocket = io(API_URL);
+        socketRef.current = newSocket;
+        setSocket(newSocket);
+
+        newSocket.on('connect', () => {
+          newSocket.emit('joinSession', {
+            sessionId,
+            userId: userData.userId,
+            name: userData.name,
+            email: userData.email,
+          });
+        });
+
+        newSocket.on('sessionUpdate', (data: SessionData) => {
+          setSession(data);
+        });
+
+        newSocket.on('userJoined', () => {
+          // Session will be updated via sessionUpdate
+        });
+
+        newSocket.on('userUpdated', () => {
+          // Session will be updated via sessionUpdate
+        });
+
+        newSocket.on('choiceMade', () => {
+          // Session will be updated via sessionUpdate
+        });
+
+        newSocket.on('revealChoices', (data: SessionData) => {
+          setSession(data);
+        });
+
+        newSocket.on('sessionReset', (data: SessionData) => {
+          setSession(data);
+        });
+
+        newSocket.on('sessionDeleted', () => {
+          navigate('/');
+        });
+
+        newSocket.on('error', (data: { message: string }) => {
+          setError(data.message);
+        });
+
+        setLoading(false);
+      } catch (err) {
+        setError('Session not found');
+        setLoading(false);
+        console.error(err);
+      }
+    };
+
+    loadSession();
+  };
+
   const handleUpdateUser = (name: string, email: string) => {
     if (!socket || !sessionId || !userData) return;
 
@@ -164,6 +257,72 @@ export default function Session() {
       console.error(err);
     }
   };
+
+  if (showJoinForm) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 w-full max-w-md">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Join Session</h1>
+          <p className="text-gray-600 mb-8">Enter your details to join the planning session</p>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-4 mb-6">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                Your Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your name"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleJoinSession();
+                  }
+                }}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email (optional)
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your.email@example.com"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleJoinSession();
+                  }
+                }}
+              />
+              <p className="text-xs text-gray-500 mt-1">Used for Gravatar avatar</p>
+            </div>
+          </div>
+
+          <button
+            onClick={handleJoinSession}
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Joining...' : 'Join Session'}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
