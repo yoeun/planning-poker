@@ -39,7 +39,7 @@ export default function UserList({
     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4">
       {!isCollapsed && (
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-900">
+          <h3 className="text-xl font-bold text-gray-900">
             Participants ({participantCount})
           </h3>
           <button
@@ -64,7 +64,7 @@ export default function UserList({
           {/* Mobile: Single row of avatars with toggle button */}
           <div className="md:hidden">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-bold text-gray-900">
+              <h3 className="text-xl font-bold text-gray-900">
                 Participants ({participantCount})
               </h3>
               <button
