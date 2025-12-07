@@ -6,6 +6,7 @@ interface AvatarProps {
   name: string;
   email: string;
   userId: string;
+  color?: string;
   size?: number;
   className?: string;
   title?: string;
@@ -18,6 +19,7 @@ export default function Avatar({
   name, 
   email, 
   userId,
+  color,
   size = 40, 
   className = '', 
   title,
@@ -44,7 +46,8 @@ export default function Avatar({
     return `hsl(${hue}, 65%, 50%)`;
   };
 
-  const bgColor = getBackgroundColor(userId);
+  // Use user's custom color if provided, otherwise generate from userId
+  const bgColor = color || getBackgroundColor(userId);
   const combinedClassName = `rounded-full border-2 flex items-center justify-center text-white font-semibold transition-all ${borderClass} ${ringClass} ${className}`.trim();
 
   if (shouldShowInitials) {

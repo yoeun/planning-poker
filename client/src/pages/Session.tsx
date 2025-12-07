@@ -12,9 +12,30 @@ import Toast from '../components/Toast';
 const POINT_OPTIONS = ['0.5', '1', '1.5', '2', '2.5', '3+', '?'];
 const API_URL = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:3001' : window.location.origin);
 
+// Predefined color palette (16 colors)
+const COLOR_PALETTE = [
+  '#EF4444', // red
+  '#F97316', // orange
+  '#F59E0B', // amber
+  '#EAB308', // yellow
+  '#84CC16', // lime
+  '#22C55E', // green
+  '#10B981', // emerald
+  '#14B8A6', // teal
+  '#06B6D4', // cyan
+  '#3B82F6', // blue
+  '#6366F1', // indigo
+  '#8B5CF6', // violet
+  '#A855F7', // purple
+  '#D946EF', // fuchsia
+  '#EC4899', // pink
+  '#F43F5E', // rose
+];
+
 interface User {
   name: string;
   email: string;
+  color?: string;
   joinedAt: number;
 }
 
@@ -43,6 +64,7 @@ export default function Session() {
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editColor, setEditColor] = useState('');
   const [isParticipantsCollapsed, setIsParticipantsCollapsed] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [creatingNewSession, setCreatingNewSession] = useState(false);
@@ -58,6 +80,7 @@ export default function Session() {
       setEmail(savedUserData.email);
       setEditName(savedUserData.name);
       setEditEmail(savedUserData.email);
+      setEditColor(savedUserData.color || '');
     }
   }, []);
 
@@ -65,6 +88,7 @@ export default function Session() {
     if (userData) {
       setEditName(userData.name);
       setEditEmail(userData.email);
+      setEditColor(userData.color || '');
     }
   }, [userData]);
 
@@ -100,6 +124,7 @@ export default function Session() {
             userId: savedUserData.userId,
             name: savedUserData.name,
             email: savedUserData.email,
+            color: savedUserData.color,
           });
         });
 
@@ -196,7 +221,8 @@ export default function Session() {
     }
 
     const userId = getUserData()?.userId || generateUserId();
-    const userData: UserData = { name: name.trim(), email: email.trim(), userId };
+    const existingColor = getUserData()?.color;
+    const userData: UserData = { name: name.trim(), email: email.trim(), userId, color: existingColor };
     saveUserData(userData);
     setUserData(userData);
     setShowJoinForm(false);
@@ -220,6 +246,7 @@ export default function Session() {
             userId: userData.userId,
             name: userData.name,
             email: userData.email,
+            color: userData.color,
           });
         });
 
@@ -268,10 +295,10 @@ export default function Session() {
     loadSession();
   };
 
-  const handleUpdateUser = (name: string, email: string) => {
+  const handleUpdateUser = (name: string, email: string, color?: string) => {
     if (!socket || !sessionId || !userData) return;
 
-    const updatedUserData: UserData = { ...userData, name, email };
+    const updatedUserData: UserData = { ...userData, name, email, color };
     saveUserData(updatedUserData);
     setUserData(updatedUserData);
 
@@ -280,6 +307,7 @@ export default function Session() {
       userId: userData.userId,
       name: name.trim(),
       email: email.trim(),
+      color: color || undefined,
     });
 
     setShowEditProfileModal(false);
@@ -289,6 +317,7 @@ export default function Session() {
     if (userData) {
       setEditName(userData.name);
       setEditEmail(userData.email);
+      setEditColor(userData.color || '');
       setError('');
       setShowEditProfileModal(true);
     }
@@ -299,7 +328,23 @@ export default function Session() {
       setError('Please enter your name');
       return;
     }
-    handleUpdateUser(editName.trim(), editEmail.trim());
+    
+    // Normalize color: ensure it starts with # if provided
+    let normalizedColor = editColor.trim();
+    if (normalizedColor && !normalizedColor.startsWith('#')) {
+      normalizedColor = '#' + normalizedColor;
+    }
+    
+    // Validate hex color format if provided
+    if (normalizedColor && normalizedColor !== '#') {
+      const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+      if (!hexRegex.test(normalizedColor)) {
+        setError('Please enter a valid hex color code (e.g., #FF5733 or FF5733)');
+        return;
+      }
+    }
+    
+    handleUpdateUser(editName.trim(), editEmail.trim(), normalizedColor || undefined);
   };
 
   const handleMakeChoice = (choice: string) => {
@@ -765,6 +810,10 @@ export default function Session() {
         onClose={() => {
           setShowEditProfileModal(false);
           setError('');
+          // Reset edit color to current user color when closing
+          if (userData) {
+            setEditColor(userData.color || '');
+          }
         }}
       >
         <Modal.Header showCloseButton={true} onClose={() => setShowEditProfileModal(false)}>
@@ -817,6 +866,91 @@ export default function Session() {
                 }}
               />
               <p className="text-xs text-gray-500 mt-1">Used for Gravatar avatar</p>
+            </div>
+            <div>
+              <label htmlFor="edit-color" className="block text-sm font-medium text-gray-700 mb-2">
+                Color (optional)
+              </label>
+              <div className="space-y-3">
+                <div className="grid grid-cols-8 gap-2">
+                  {COLOR_PALETTE.map((color) => {
+                    const isSelected = editColor && editColor.replace('#', '').toUpperCase() === color.replace('#', '').toUpperCase();
+                    return (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => {
+                          setEditColor(color);
+                          setError('');
+                        }}
+                        className={`
+                          w-10 h-10 rounded-lg border-2 transition-all hover:scale-110
+                          ${isSelected ? 'border-gray-900 ring-2 ring-gray-300' : 'border-gray-300 hover:border-gray-400'}
+                        `}
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      >
+                        {isSelected && (
+                          <svg
+                            className="w-5 h-5 mx-auto text-white drop-shadow-md"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="edit-color"
+                    type="text"
+                    value={editColor}
+                    onChange={(e) => {
+                      setEditColor(e.target.value);
+                      setError('');
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none font-mono text-sm"
+                    placeholder="#FF5733 or FF5733"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSaveProfile();
+                      }
+                    }}
+                  />
+                  {(() => {
+                    const normalizedColor = editColor.trim();
+                    if (!normalizedColor) return null;
+                    const colorWithHash = normalizedColor.startsWith('#') ? normalizedColor : '#' + normalizedColor;
+                    const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+                    const isValid = hexRegex.test(colorWithHash);
+                    return (
+                      <div
+                        className={`w-10 h-10 rounded-lg border-2 flex-shrink-0 ${
+                          isValid ? 'border-gray-300' : 'border-red-300'
+                        }`}
+                        style={{ backgroundColor: isValid ? colorWithHash : 'transparent' }}
+                        title={isValid ? 'Preview' : 'Invalid color'}
+                      >
+                        {!isValid && normalizedColor && (
+                          <svg
+                            className="w-5 h-5 mx-auto mt-2 text-red-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+                <p className="text-xs text-gray-500">Choose a color from the grid or enter a custom hex code</p>
+              </div>
             </div>
           </div>
         </Modal.Body>

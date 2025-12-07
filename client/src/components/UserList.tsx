@@ -4,6 +4,7 @@ import Avatar from './Avatar';
 interface User {
   name: string;
   email: string;
+  color?: string;
   joinedAt: number;
 }
 
@@ -125,6 +126,7 @@ export default function UserList({
                       name={user.name}
                       email={user.email}
                       userId={userId}
+                      color={user.color}
                       size={40}
                       borderClass={borderClass}
                       ringClass={isCurrentUser ? 'ring-2 ring-blue-200' : ''}
@@ -190,6 +192,7 @@ export default function UserList({
                   name={user.name}
                   email={user.email}
                   userId={userId}
+                  color={user.color}
                   size={40}
                   borderClass={borderClass}
                   className="flex-shrink-0"

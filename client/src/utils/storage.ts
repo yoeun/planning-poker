@@ -4,6 +4,7 @@ export interface UserData {
   name: string;
   email: string;
   userId: string;
+  color?: string;
 }
 
 export function getUserData(): UserData | null {

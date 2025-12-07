@@ -4,6 +4,7 @@ import Avatar from './Avatar';
 interface User {
   name: string;
   email: string;
+  color?: string;
   joinedAt: number;
 }
 
@@ -168,6 +169,7 @@ export default function Results({
                         name={user.name}
                         email={user.email}
                         userId={userId}
+                        color={user.color}
                         size={40}
                         borderClass={isCurrentUser ? 'border-blue-500' : 'border-white'}
                         ringClass={isCurrentUser ? 'ring-2 ring-blue-200' : ''}

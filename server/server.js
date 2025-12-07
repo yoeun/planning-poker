@@ -117,7 +117,7 @@ app.delete('/api/sessions/:sessionId', async (req, res) => {
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  socket.on('joinSession', async ({ sessionId, userId, name, email }) => {
+  socket.on('joinSession', async ({ sessionId, userId, name, email, color }) => {
     try {
       const data = await redisClient.get(`session:${sessionId}`);
       if (!data) {
@@ -126,7 +126,7 @@ io.on('connection', (socket) => {
       }
 
       const session = JSON.parse(data);
-      session.users[userId] = { name, email, joinedAt: Date.now() };
+      session.users[userId] = { name, email, color, joinedAt: Date.now() };
       
       await redisClient.setEx(`session:${sessionId}`, 86400, JSON.stringify(session));
       
@@ -134,7 +134,7 @@ io.on('connection', (socket) => {
       socket.sessionId = sessionId;
       socket.userId = userId;
       
-      io.to(sessionId).emit('userJoined', { userId, name, email });
+      io.to(sessionId).emit('userJoined', { userId, name, email, color });
       io.to(sessionId).emit('sessionUpdate', session);
     } catch (error) {
       console.error('Error joining session:', error);
@@ -142,7 +142,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('updateUser', async ({ sessionId, userId, name, email }) => {
+  socket.on('updateUser', async ({ sessionId, userId, name, email, color }) => {
     try {
       const data = await redisClient.get(`session:${sessionId}`);
       if (!data) return;
@@ -151,9 +151,12 @@ io.on('connection', (socket) => {
       if (session.users[userId]) {
         session.users[userId].name = name;
         session.users[userId].email = email;
+        if (color !== undefined) {
+          session.users[userId].color = color;
+        }
         
         await redisClient.setEx(`session:${sessionId}`, 86400, JSON.stringify(session));
-        io.to(sessionId).emit('userUpdated', { userId, name, email });
+        io.to(sessionId).emit('userUpdated', { userId, name, email, color });
         io.to(sessionId).emit('sessionUpdate', session);
       }
     } catch (error) {
