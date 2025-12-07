@@ -9,7 +9,7 @@ import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Toast from '../components/Toast';
 
-const POINT_OPTIONS = ['?', '0.5', '1', '1.5', '2', '2.5', '3+'];
+const POINT_OPTIONS = ['0.5', '1', '1.5', '2', '2.5', '3+', '?'];
 const API_URL = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:3001' : window.location.origin);
 
 interface User {

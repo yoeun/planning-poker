@@ -98,17 +98,6 @@ export default function VotingCards({
         <h2 className="text-xl font-bold text-gray-900 mb-2">
           {revealed ? 'Results' : 'Select Your Estimate'}
         </h2>
-        {!revealed && (
-          <>
-            <p className="text-gray-600 text-sm">
-              {hasChosen ? (
-                <span className="text-green-600 font-medium">✓ You've made your choice</span>
-              ) : (
-                'Choose a point value below'
-              )}
-            </p>
-          </>
-        )}
         {revealed && (
           <p className="text-gray-600 text-sm">
             Results are revealed. You can change your choice below.
@@ -140,7 +129,7 @@ export default function VotingCards({
                     ? 'bg-blue-600 border-blue-700 text-white shadow-lg scale-105'
                     : 'bg-white border-gray-300 text-gray-700 hover:border-blue-400 hover:shadow-md'
                   }
-                  font-bold text-lg
+                  font-bold text-2xl
                 `}
               >
                 {option}
