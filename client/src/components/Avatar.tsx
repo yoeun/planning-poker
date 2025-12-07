@@ -5,6 +5,7 @@ import { getInitials } from '../utils/initials';
 interface AvatarProps {
   name: string;
   email: string;
+  userId: string;
   size?: number;
   className?: string;
   title?: string;
@@ -16,6 +17,7 @@ interface AvatarProps {
 export default function Avatar({ 
   name, 
   email, 
+  userId,
   size = 40, 
   className = '', 
   title,
@@ -32,7 +34,7 @@ export default function Avatar({
   // Check if email is empty or invalid - show initials immediately
   const shouldShowInitials = !email || !email.trim() || imageError;
   
-  // Generate a background color based on the name (for consistency)
+  // Generate a background color based on userId (for consistency across sessions)
   const getBackgroundColor = (str: string): string => {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -42,7 +44,7 @@ export default function Avatar({
     return `hsl(${hue}, 65%, 50%)`;
   };
 
-  const bgColor = getBackgroundColor(name || email || 'default');
+  const bgColor = getBackgroundColor(userId);
   const combinedClassName = `rounded-full border-2 flex items-center justify-center text-white font-semibold transition-all ${borderClass} ${ringClass} ${className}`.trim();
 
   if (shouldShowInitials) {

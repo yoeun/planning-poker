@@ -163,6 +163,7 @@ export default function VotingCards({
                         key={userId}
                         name={user.name}
                         email={user.email}
+                        userId={userId}
                         size={32}
                         borderClass={isCurrentUser ? 'border-blue-500' : 'border-white'}
                         ringClass={isCurrentUser ? 'ring-2 ring-blue-200' : ''}

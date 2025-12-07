@@ -167,6 +167,7 @@ export default function Results({
                       <Avatar
                         name={user.name}
                         email={user.email}
+                        userId={userId}
                         size={40}
                         borderClass={isCurrentUser ? 'border-blue-500' : 'border-white'}
                         ringClass={isCurrentUser ? 'ring-2 ring-blue-200' : ''}

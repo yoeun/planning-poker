@@ -124,6 +124,7 @@ export default function UserList({
                     <Avatar
                       name={user.name}
                       email={user.email}
+                      userId={userId}
                       size={40}
                       borderClass={borderClass}
                       ringClass={isCurrentUser ? 'ring-2 ring-blue-200' : ''}
@@ -159,6 +160,7 @@ export default function UserList({
                   <Avatar
                     name={user.name}
                     email={user.email}
+                    userId={userId}
                     size={40}
                     borderClass={borderClass}
                     ringClass={isCurrentUser ? 'ring-2 ring-blue-200' : ''}
@@ -173,7 +175,7 @@ export default function UserList({
       ) : (
         <div className="space-y-3">
           {userList.map(([userId, user]) => {
-            const { opacity, borderClass, hasVoted, isCurrentUser } = getUserStyling(userId);
+            const { opacity, borderClass, isCurrentUser } = getUserStyling(userId);
             
             return (
               <div
@@ -187,6 +189,7 @@ export default function UserList({
                 <Avatar
                   name={user.name}
                   email={user.email}
+                  userId={userId}
                   size={40}
                   borderClass={borderClass}
                   className="flex-shrink-0"
