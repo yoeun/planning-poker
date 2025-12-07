@@ -7,6 +7,7 @@ import UserList from '../components/UserList';
 import VotingCards from '../components/VotingCards';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
+import Toast from '../components/Toast';
 
 const POINT_OPTIONS = ['?', '0.5', '1', '1.5', '2', '2.5', '3+'];
 const API_URL = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:3001' : window.location.origin);
@@ -45,6 +46,7 @@ export default function Session() {
   const [isParticipantsCollapsed, setIsParticipantsCollapsed] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [creatingNewSession, setCreatingNewSession] = useState(false);
+  const [showToast, setShowToast] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const isJoiningRef = useRef<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -320,6 +322,29 @@ export default function Session() {
     socket.emit('resetSession', { sessionId });
   };
 
+  const handleShare = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShowToast(true);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setShowToast(true);
+      } catch (fallbackErr) {
+        console.error('Failed to copy URL:', fallbackErr);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
   const handleDelete = async () => {
     if (!sessionId) return;
     try {
@@ -572,6 +597,25 @@ export default function Session() {
                 </svg>
                 Reset
               </button>
+              <button
+                onClick={handleShare}
+                className="hidden md:flex px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg shadow-sm transition items-center gap-2"
+                title="Share session"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5" style={{ transform: 'rotate(-45deg)' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                </svg>
+                Share
+              </button>
+              <button
+                onClick={handleShare}
+                className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg shadow-sm transition flex items-center justify-center md:hidden"
+                title="Share session"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5" style={{ transform: 'rotate(-45deg)' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                </svg>
+              </button>
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setShowMenu(!showMenu)}
@@ -790,6 +834,13 @@ export default function Session() {
           </div>
         </Modal.Footer>
       </Modal>
+
+      {/* Toast Notification */}
+      <Toast
+        message="URL copied to clipboard!"
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+      />
     </div>
   );
 }
