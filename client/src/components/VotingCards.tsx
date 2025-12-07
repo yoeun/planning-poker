@@ -29,7 +29,6 @@ export default function VotingCards({
   users,
   revealed = false,
 }: VotingCardsProps) {
-  const hasChosen = currentUserChoice !== undefined;
   const chosenCount = Object.keys(choices).filter(uid => choices[uid] !== undefined).length;
 
   // Group users by their choice

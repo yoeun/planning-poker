@@ -93,7 +93,7 @@ describe('Modal', () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
 
-    const { container } = render(
+    render(
       <Modal isOpen={true} onClose={onClose}>
         <Modal.Header>
           <h2>Test Modal</h2>

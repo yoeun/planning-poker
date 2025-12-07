@@ -1,9 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { BrowserRouter } from 'react-router-dom';
-import Session from './Session';
-import { saveUserData, getUserData, UserData } from '../utils/storage';
+import { getUserData, UserData } from '../utils/storage';
 
 // Mock socket.io-client
 vi.mock('socket.io-client', () => ({
@@ -42,13 +38,6 @@ vi.mock('../utils/storage', async () => {
   };
 });
 
-const renderSession = (sessionId = 'test-session') => {
-  return render(
-    <BrowserRouter>
-      <Session />
-    </BrowserRouter>
-  );
-};
 
 describe('Session - Color Selection', () => {
   const mockUserData: UserData = {
@@ -68,7 +57,6 @@ describe('Session - Color Selection', () => {
   });
 
   it('should display color picker in edit profile modal', async () => {
-    const user = userEvent.setup();
     
     // Mock socket connection
     const mockSocket = {
