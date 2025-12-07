@@ -26,11 +26,11 @@ export default function UserList({
   const isCollapsed = externalCollapsed !== undefined ? externalCollapsed : internalCollapsed;
   const setIsCollapsed = onToggleCollapse || (() => setInternalCollapsed(!internalCollapsed));
 
-  // Sort users: current user first, then others by join time
+  // Sort users: current user first, then others alphabetically by name
   const userList = Object.entries(users).sort((a, b) => {
     if (a[0] === currentUserId) return -1;
     if (b[0] === currentUserId) return 1;
-    return a[1].joinedAt - b[1].joinedAt;
+    return a[1].name.localeCompare(b[1].name);
   });
 
   const participantCount = userList.length;
