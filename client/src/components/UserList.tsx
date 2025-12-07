@@ -13,6 +13,9 @@ interface UserListProps {
   onEditProfile: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  choices?: Record<string, string>;
+  allChosen?: boolean;
+  revealed?: boolean;
 }
 
 export default function UserList({
@@ -21,6 +24,9 @@ export default function UserList({
   onEditProfile,
   isCollapsed: externalCollapsed,
   onToggleCollapse,
+  choices = {},
+  allChosen = false,
+  revealed = false,
 }: UserListProps) {
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const isCollapsed = externalCollapsed !== undefined ? externalCollapsed : internalCollapsed;
@@ -34,6 +40,34 @@ export default function UserList({
   });
 
   const participantCount = userList.length;
+
+  // Determine voting status
+  const votingHasBegun = Object.keys(choices).some(uid => choices[uid] !== undefined);
+  const votingHasEnded = allChosen || revealed;
+
+  // Helper function to get user styling
+  const getUserStyling = (userId: string) => {
+    const isCurrentUser = userId === currentUserId;
+    const hasVoted = choices[userId] !== undefined;
+    
+    // Determine opacity
+    let opacity = 1;
+    if (!votingHasEnded && votingHasBegun) {
+      opacity = hasVoted ? 1 : 0.5;
+    }
+    
+    // Determine border color
+    // Green border takes precedence for voted users during active voting
+    let borderClass = 'border-gray-200';
+    if (hasVoted && !votingHasEnded && votingHasBegun) {
+      borderClass = 'border-green-500';
+    } else if (isCurrentUser && (!votingHasBegun || votingHasEnded)) {
+      // Blue border for current user only when not in active voting state
+      borderClass = 'border-blue-500';
+    }
+    
+    return { opacity, borderClass, hasVoted, isCurrentUser };
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4">
@@ -84,17 +118,19 @@ export default function UserList({
             </div>
             <div className="flex flex-wrap gap-2">
               {userList.map(([userId, user]) => {
-                const isCurrentUser = userId === currentUserId;
+                const { opacity, borderClass, hasVoted, isCurrentUser } = getUserStyling(userId);
                 return (
                   <div key={userId} className="relative">
                     <img
                       src={getGravatarUrl(user.email, 40)}
                       alt={user.name}
                       className={`
-                        w-10 h-10 rounded-full border-2
-                        ${isCurrentUser ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'}
+                        w-10 h-10 rounded-full border-2 transition-all
+                        ${isCurrentUser ? 'ring-2 ring-blue-200' : ''}
+                        ${borderClass}
                       `}
-                      title={user.name + (isCurrentUser ? ' (You)' : '')}
+                      style={{ opacity }}
+                      title={user.name + (isCurrentUser ? ' (You)' : '') + (hasVoted ? ' ✓ Voted' : '')}
                     />
                   </div>
                 );
@@ -119,17 +155,19 @@ export default function UserList({
               </svg>
             </button>
             {userList.map(([userId, user]) => {
-              const isCurrentUser = userId === currentUserId;
+              const { opacity, borderClass, hasVoted, isCurrentUser } = getUserStyling(userId);
               return (
                 <div key={userId} className="relative">
                   <img
                     src={getGravatarUrl(user.email, 40)}
                     alt={user.name}
                     className={`
-                      w-10 h-10 rounded-full border-2
-                      ${isCurrentUser ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'}
+                      w-10 h-10 rounded-full border-2 transition-all
+                      ${isCurrentUser ? 'ring-2 ring-blue-200' : ''}
+                      ${borderClass}
                     `}
-                    title={user.name + (isCurrentUser ? ' (You)' : '')}
+                    style={{ opacity }}
+                    title={user.name + (isCurrentUser ? ' (You)' : '') + (hasVoted ? ' ✓ Voted' : '')}
                   />
                 </div>
               );
@@ -139,7 +177,7 @@ export default function UserList({
       ) : (
         <div className="space-y-3">
           {userList.map(([userId, user]) => {
-            const isCurrentUser = userId === currentUserId;
+            const { opacity, borderClass, hasVoted, isCurrentUser } = getUserStyling(userId);
             
             return (
               <div
@@ -148,13 +186,14 @@ export default function UserList({
                   flex items-center gap-3 p-2 rounded-lg transition-colors
                   ${isCurrentUser ? 'bg-blue-50' : 'hover:bg-gray-50'}
                 `}
+                style={{ opacity }}
               >
                 <img
                   src={getGravatarUrl(user.email, 40)}
                   alt={user.name}
                   className={`
-                    w-10 h-10 rounded-full border-2 flex-shrink-0
-                    ${isCurrentUser ? 'border-blue-500' : 'border-gray-200'}
+                    w-10 h-10 rounded-full border-2 flex-shrink-0 transition-all
+                    ${borderClass}
                   `}
                 />
                 <div className="flex-1 min-w-0">

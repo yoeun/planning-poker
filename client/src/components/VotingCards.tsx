@@ -146,8 +146,8 @@ export default function VotingCards({
                 {option}
               </button>
               
-              {/* Vote count */}
-              {voteCount > 0 && (
+              {/* Vote count - only show after reveal */}
+              {revealed && voteCount > 0 && (
                 <div className="text-xs font-semibold text-gray-600">
                   {voteCount} {voteCount === 1 ? 'vote' : 'votes'}
                 </div>

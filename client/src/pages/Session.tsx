@@ -691,6 +691,9 @@ export default function Session() {
               onEditProfile={handleEditProfileClick}
               isCollapsed={isParticipantsCollapsed}
               onToggleCollapse={() => setIsParticipantsCollapsed(!isParticipantsCollapsed)}
+              choices={session.choices}
+              allChosen={allChosen}
+              revealed={session.revealed}
             />
           </div>
 
