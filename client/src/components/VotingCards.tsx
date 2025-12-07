@@ -69,6 +69,33 @@ export default function VotingCards({
     return grouped;
   }, [users, choices, pointOptions]);
 
+  // Find the option with the most votes and check if it has majority (only when revealed)
+  const mostVotedOption = useMemo(() => {
+    if (!revealed) return '';
+    
+    let maxVotes = 0;
+    let mostVoted = '';
+    let totalVotes = 0;
+    
+    pointOptions.forEach(option => {
+      const voteCount = (usersByChoice[option] || []).length;
+      totalVotes += voteCount;
+      if (voteCount > maxVotes) {
+        maxVotes = voteCount;
+        mostVoted = option;
+      }
+    });
+    
+    // Only return the most voted option if it has majority (more than 50%)
+    if (maxVotes > 0 && totalVotes > 0 && maxVotes > totalVotes / 2) {
+      return mostVoted;
+    }
+    
+    return '';
+  }, [usersByChoice, pointOptions, revealed]);
+
+  const isUserChoiceDifferent = currentUserChoice && currentUserChoice !== mostVotedOption;
+
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
       <div className="mb-6">
@@ -103,6 +130,8 @@ export default function VotingCards({
           const isSelected = currentUserChoice === option;
           const usersForChoice = usersByChoice[option] || [];
           const voteCount = usersForChoice.length;
+          const isMostVoted = revealed && option === mostVotedOption;
+          const shouldHighlightYellow = revealed && isSelected && isUserChoiceDifferent;
 
           return (
             <div key={option} className="flex flex-col items-center gap-2">
@@ -110,7 +139,13 @@ export default function VotingCards({
                 onClick={() => onMakeChoice(option)}
                 className={`
                   w-full aspect-square rounded-xl border-2 transition-all transform hover:scale-105
-                  ${isSelected
+                  ${revealed && isMostVoted
+                    ? 'bg-blue-600 border-blue-700 text-white shadow-lg scale-105'
+                    : revealed && shouldHighlightYellow
+                    ? 'bg-yellow-100 border-yellow-400 text-gray-900 shadow-md scale-105'
+                    : revealed && voteCount === 0
+                    ? 'bg-gray-100 border-gray-200 text-gray-400 opacity-60'
+                    : isSelected && !revealed
                     ? 'bg-blue-600 border-blue-700 text-white shadow-lg scale-105'
                     : 'bg-white border-gray-300 text-gray-700 hover:border-blue-400 hover:shadow-md'
                   }
@@ -127,9 +162,9 @@ export default function VotingCards({
                 </div>
               )}
               
-              {/* Avatar column - only show when revealed */}
+              {/* Avatar column - only show when revealed, hidden on mobile */}
               {revealed && (
-                <div className="flex flex-col items-center gap-1.5 min-h-[40px] w-full">
+                <div className="hidden md:flex flex-col items-center gap-1.5 min-h-[40px] w-full">
                   {usersForChoice.map(([userId, user]) => {
                     const isCurrentUser = userId === currentUserId;
                     return (

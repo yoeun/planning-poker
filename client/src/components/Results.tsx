@@ -77,6 +77,32 @@ export default function Results({
     return grouped;
   }, [users, choices, pointOptions]);
 
+  // Find the option with the most votes and check if it has majority
+  const mostVotedOption = useMemo(() => {
+    let maxVotes = 0;
+    let mostVoted = '';
+    let totalVotes = 0;
+    
+    pointOptions.forEach(option => {
+      const voteCount = (usersByChoice[option] || []).length;
+      totalVotes += voteCount;
+      if (voteCount > maxVotes) {
+        maxVotes = voteCount;
+        mostVoted = option;
+      }
+    });
+    
+    // Only return the most voted option if it has majority (more than 50%)
+    if (maxVotes > 0 && totalVotes > 0 && maxVotes > totalVotes / 2) {
+      return mostVoted;
+    }
+    
+    return '';
+  }, [usersByChoice, pointOptions]);
+
+  const currentUserChoice = choices[currentUserId];
+  const isUserChoiceDifferent = currentUserChoice && currentUserChoice !== mostVotedOption;
+
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
       <h2 className="text-xl font-bold text-gray-900 mb-6">Results</h2>
@@ -86,7 +112,9 @@ export default function Results({
         {pointOptions.map((option) => {
           const usersForChoice = usersByChoice[option] || [];
           const voteCount = usersForChoice.length;
-          const isSelected = choices[currentUserId] === option;
+          const isMostVoted = option === mostVotedOption;
+          const isUserChoice = option === currentUserChoice;
+          const shouldHighlightYellow = isUserChoice && isUserChoiceDifferent;
 
           return (
             <div
@@ -98,11 +126,13 @@ export default function Results({
                 className={`
                   aspect-square w-20 rounded-xl border-2 transition-all transform
                   flex items-center justify-center font-bold text-2xl
-                  ${isSelected
+                  ${isMostVoted
                     ? 'bg-blue-600 border-blue-700 text-white shadow-lg scale-105'
+                    : shouldHighlightYellow
+                    ? 'bg-yellow-100 border-yellow-400 text-gray-900 shadow-md scale-105'
                     : voteCount > 0
                     ? 'bg-green-50 border-green-300 text-gray-900 shadow-md'
-                    : 'bg-white border-gray-300 text-gray-700'
+                    : 'bg-gray-100 border-gray-200 text-gray-400 opacity-60'
                   }
                 `}
               >
@@ -116,8 +146,8 @@ export default function Results({
                 </div>
               )}
 
-              {/* Avatar column */}
-              <div className="flex flex-col items-center gap-2 min-h-[60px]">
+              {/* Avatar column - hidden on mobile */}
+              <div className="hidden md:flex flex-col items-center gap-2 min-h-[60px]">
                 {usersForChoice.map(([userId, user], index) => {
                   const isRevealed = revealed.has(userId) || allRevealed;
                   const isCurrentUser = userId === currentUserId;
