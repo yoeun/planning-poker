@@ -44,6 +44,7 @@ export default function Session() {
   const [editEmail, setEditEmail] = useState('');
   const [isParticipantsCollapsed, setIsParticipantsCollapsed] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [creatingNewSession, setCreatingNewSession] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const isJoiningRef = useRef<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -400,17 +401,28 @@ export default function Session() {
   };
 
   const handleCreateNewSessionAfterEnd = async () => {
+    // Clean up socket connection before navigating
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
+    
     const savedUserData = getUserData();
     if (!savedUserData || !savedUserData.name.trim()) {
-      navigate('/');
+      window.location.href = '/';
       return;
     }
 
+    setCreatingNewSession(true);
+    setError('');
+
     try {
       const { sessionId: newSessionId } = await createSession();
-      navigate(`/session/${newSessionId}`);
+      // Use window.location.href to force a full page reload and reset all state
+      window.location.href = `/session/${newSessionId}`;
     } catch (err) {
       setError('Failed to create new session');
+      setCreatingNewSession(false);
       console.error(err);
     }
   };
@@ -517,11 +529,17 @@ export default function Session() {
           <p className="text-gray-600 mb-8">
             The session has been ended by the host. All participants have been disconnected.
           </p>
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+              {error}
+            </div>
+          )}
           <button
             onClick={handleCreateNewSessionAfterEnd}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition"
+            disabled={creatingNewSession}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Create New Session
+            {creatingNewSession ? 'Creating...' : 'Create New Session'}
           </button>
         </div>
       </div>
