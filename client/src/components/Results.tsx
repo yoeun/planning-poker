@@ -127,7 +127,7 @@ export default function Results({
                   aspect-square w-20 rounded-xl border-2 transition-all transform
                   flex items-center justify-center font-bold text-2xl
                   ${isMostVoted
-                    ? 'bg-blue-600 border-blue-700 text-white shadow-lg scale-105'
+                    ? 'bg-green-600 border-green-700 text-white shadow-lg scale-105'
                     : shouldHighlightYellow
                     ? 'bg-yellow-100 border-yellow-400 text-gray-900 shadow-md scale-105'
                     : voteCount > 0

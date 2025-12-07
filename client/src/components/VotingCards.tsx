@@ -131,7 +131,7 @@ export default function VotingCards({
                 className={`
                   w-full aspect-square rounded-xl border-2 transition-all transform hover:scale-105
                   ${revealed && isMostVoted
-                    ? 'bg-blue-600 border-blue-700 text-white shadow-lg scale-105'
+                    ? 'bg-green-600 border-green-700 text-white shadow-lg scale-105'
                     : revealed && shouldHighlightYellow
                     ? 'bg-yellow-100 border-yellow-400 text-gray-900 shadow-md scale-105'
                     : revealed && voteCount === 0
