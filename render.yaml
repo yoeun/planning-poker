@@ -10,20 +10,9 @@ services:
       - key: PORT
         value: 3001
       - key: REDIS_URL
-        fromService:
-          type: redis
-          name: planning-poker-redis
-          property: connectionString
+        value: redis://localhost:6379
       - key: CLIENT_URL
         value: https://planning-poker.onrender.com
-      - key: NODE_ENV
-        value: production
     healthCheckPath: /
     autoDeploy: true
-
-databases:
-  - name: planning-poker-redis
-    plan: free
-    type: redis
-    maxmemoryPolicy: allkeys-lru
 

@@ -10,6 +10,9 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 
+# Install Redis
+RUN apk add --no-cache redis
+
 # Install server dependencies
 COPY server/package*.json ./
 RUN npm install --production
@@ -20,7 +23,11 @@ COPY server/ ./
 # Copy built client
 COPY --from=client-builder /app/client/dist ./public
 
+# Copy startup script
+COPY start.sh ./
+RUN chmod +x start.sh
+
 EXPOSE 3001
 
-CMD ["node", "server.js"]
+CMD ["./start.sh"]
 
