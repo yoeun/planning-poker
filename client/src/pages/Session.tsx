@@ -40,6 +40,9 @@ export default function Session() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [showJoinForm, setShowJoinForm] = useState(false);
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
   const socketRef = useRef<Socket | null>(null);
   const isJoiningRef = useRef<boolean>(false);
 
@@ -48,8 +51,17 @@ export default function Session() {
     if (savedUserData) {
       setName(savedUserData.name);
       setEmail(savedUserData.email);
+      setEditName(savedUserData.name);
+      setEditEmail(savedUserData.email);
     }
   }, []);
+
+  useEffect(() => {
+    if (userData) {
+      setEditName(userData.name);
+      setEditEmail(userData.email);
+    }
+  }, [userData]);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -247,6 +259,25 @@ export default function Session() {
       name: name.trim(),
       email: email.trim(),
     });
+    
+    setShowEditProfileModal(false);
+  };
+
+  const handleEditProfileClick = () => {
+    if (userData) {
+      setEditName(userData.name);
+      setEditEmail(userData.email);
+      setError('');
+      setShowEditProfileModal(true);
+    }
+  };
+
+  const handleSaveProfile = () => {
+    if (!editName.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+    handleUpdateUser(editName.trim(), editEmail.trim());
   };
 
   const handleMakeChoice = (choice: string) => {
@@ -525,41 +556,37 @@ export default function Session() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* User List */}
-          <div className="lg:col-span-1">
-            <UserList
-              users={session.users}
-              currentUserId={userData.userId}
-              currentUserName={userData.name}
-              currentUserEmail={userData.email}
-              onUpdateUser={handleUpdateUser}
-            />
-          </div>
+        {/* Participants */}
+        <div className="mb-6">
+          <UserList
+            users={session.users}
+            currentUserId={userData.userId}
+            onEditProfile={handleEditProfileClick}
+          />
+        </div>
 
-          {/* Main Voting Area */}
-          <div className="lg:col-span-2">
-            {session.revealed ? (
-              <Results
-                users={session.users}
-                choices={session.choices}
-                currentUserId={userData.userId}
-                onMakeChoice={handleMakeChoice}
-                pointOptions={POINT_OPTIONS}
-              />
-            ) : (
-              <VotingCards
-                choices={session.choices}
-                currentUserId={userData.userId}
-                currentUserChoice={currentUserChoice}
-                allChosen={allChosen}
-                totalUsers={allUsers.length}
-                onMakeChoice={handleMakeChoice}
-                onReveal={handleReveal}
-                pointOptions={POINT_OPTIONS}
-              />
-            )}
-          </div>
+        {/* Main Voting Area */}
+        <div>
+          {session.revealed ? (
+            <Results
+              users={session.users}
+              choices={session.choices}
+              currentUserId={userData.userId}
+              onMakeChoice={handleMakeChoice}
+              pointOptions={POINT_OPTIONS}
+            />
+          ) : (
+            <VotingCards
+              choices={session.choices}
+              currentUserId={userData.userId}
+              currentUserChoice={currentUserChoice}
+              allChosen={allChosen}
+              totalUsers={allUsers.length}
+              onMakeChoice={handleMakeChoice}
+              onReveal={handleReveal}
+              pointOptions={POINT_OPTIONS}
+            />
+          )}
         </div>
       </div>
 
@@ -601,6 +628,85 @@ export default function Session() {
               className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg transition"
             >
               No, keep current session
+            </button>
+          </div>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        isOpen={showEditProfileModal}
+        onClose={() => {
+          setShowEditProfileModal(false);
+          setError('');
+        }}
+      >
+        <Modal.Header showCloseButton={true} onClose={() => setShowEditProfileModal(false)}>
+          <h3 className="text-xl font-bold text-gray-900">Edit Profile</h3>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="space-y-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+            <div>
+              <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700 mb-2">
+                Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="edit-name"
+                type="text"
+                value={editName}
+                onChange={(e) => {
+                  setEditName(e.target.value);
+                  setError('');
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                placeholder="Enter your name"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveProfile();
+                  }
+                }}
+                autoFocus
+              />
+            </div>
+            <div>
+              <label htmlFor="edit-email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email (optional)
+              </label>
+              <input
+                id="edit-email"
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                placeholder="your.email@example.com"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveProfile();
+                  }
+                }}
+              />
+              <p className="text-xs text-gray-500 mt-1">Used for Gravatar avatar</p>
+            </div>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowEditProfileModal(false)}
+              className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveProfile}
+              className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
+            >
+              Save
             </button>
           </div>
         </Modal.Footer>
