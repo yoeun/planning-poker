@@ -111,11 +111,6 @@ export default function VotingCards({
                 'Choose a point value below'
               )}
             </p>
-            {!allChosen && (
-              <p className="text-gray-500 text-xs mt-1">
-                {chosenCount} of {totalUsers} participants have chosen
-              </p>
-            )}
           </>
         )}
         {revealed && (
