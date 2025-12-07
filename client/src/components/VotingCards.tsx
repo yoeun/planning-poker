@@ -71,29 +71,23 @@ export default function VotingCards({
     return grouped;
   }, [users, choices, pointOptions]);
 
-  // Find the option with the most votes and check if it has majority (only when revealed)
+  // Find the option with the most votes (only when revealed)
   const mostVotedOption = useMemo(() => {
     if (!revealed) return '';
     
     let maxVotes = 0;
     let mostVoted = '';
-    let totalVotes = 0;
     
     pointOptions.forEach(option => {
       const voteCount = (usersByChoice[option] || []).length;
-      totalVotes += voteCount;
       if (voteCount > maxVotes) {
         maxVotes = voteCount;
         mostVoted = option;
       }
     });
     
-    // Only return the most voted option if it has majority (more than 50%)
-    if (maxVotes > 0 && totalVotes > 0 && maxVotes > totalVotes / 2) {
-      return mostVoted;
-    }
-    
-    return '';
+    // Return the most voted option if it has at least one vote
+    return maxVotes > 0 ? mostVoted : '';
   }, [usersByChoice, pointOptions, revealed]);
 
   const isUserChoiceDifferent = currentUserChoice && currentUserChoice !== mostVotedOption;
