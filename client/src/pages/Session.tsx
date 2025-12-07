@@ -42,6 +42,7 @@ export default function Session() {
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [isParticipantsCollapsed, setIsParticipantsCollapsed] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const isJoiningRef = useRef<boolean>(false);
 
@@ -555,29 +556,34 @@ export default function Session() {
           </div>
         </div>
 
-        {/* Participants */}
-        <div className="mb-6">
-          <UserList
-            users={session.users}
-            currentUserId={userData.userId}
-            onEditProfile={handleEditProfileClick}
-          />
-        </div>
+        {/* Main Content Area */}
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Participants */}
+          <div className={`md:flex-shrink-0 transition-all ${isParticipantsCollapsed ? 'md:w-auto' : 'md:w-80'}`}>
+            <UserList
+              users={session.users}
+              currentUserId={userData.userId}
+              onEditProfile={handleEditProfileClick}
+              isCollapsed={isParticipantsCollapsed}
+              onToggleCollapse={() => setIsParticipantsCollapsed(!isParticipantsCollapsed)}
+            />
+          </div>
 
-        {/* Main Voting Area */}
-        <div>
-          <VotingCards
-            choices={session.choices}
-            currentUserId={userData.userId}
-            currentUserChoice={currentUserChoice}
-            allChosen={allChosen}
-            totalUsers={allUsers.length}
-            onMakeChoice={handleMakeChoice}
-            onReveal={handleReveal}
-            pointOptions={POINT_OPTIONS}
-            users={session.users}
-            revealed={session.revealed}
-          />
+          {/* Main Voting Area */}
+          <div className="flex-1">
+            <VotingCards
+              choices={session.choices}
+              currentUserId={userData.userId}
+              currentUserChoice={currentUserChoice}
+              allChosen={allChosen}
+              totalUsers={allUsers.length}
+              onMakeChoice={handleMakeChoice}
+              onReveal={handleReveal}
+              pointOptions={POINT_OPTIONS}
+              users={session.users}
+              revealed={session.revealed}
+            />
+          </div>
         </div>
       </div>
 
