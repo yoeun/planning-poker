@@ -279,7 +279,7 @@ export default function Session() {
       name: name.trim(),
       email: email.trim(),
     });
-    
+
     setShowEditProfileModal(false);
   };
 
@@ -339,7 +339,7 @@ export default function Session() {
     }
 
     e.preventDefault();
-    
+
     // Only create session if user data exists
     const savedUserData = getUserData();
     if (!savedUserData || !savedUserData.name.trim()) {
@@ -365,13 +365,13 @@ export default function Session() {
 
   const handleEndSessionAndCreateNew = async () => {
     if (!sessionId) return;
-    
+
     setShowEndSessionConfirm(false);
-    
+
     try {
       // Delete current session (this will notify other users via socket)
       await deleteSession(sessionId);
-      
+
       // Create new session
       const { sessionId: newSessionId } = await createSession();
       navigate(`/session/${newSessionId}`);
@@ -383,7 +383,7 @@ export default function Session() {
 
   const handleKeepSessionAndCreateNew = async () => {
     setShowEndSessionConfirm(false);
-    
+
     const savedUserData = getUserData();
     if (!savedUserData || !savedUserData.name.trim()) {
       navigate('/');
@@ -406,7 +406,7 @@ export default function Session() {
       socketRef.current.disconnect();
       socketRef.current = null;
     }
-    
+
     const savedUserData = getUserData();
     if (!savedUserData || !savedUserData.name.trim()) {
       window.location.href = '/';
@@ -555,7 +555,7 @@ export default function Session() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex flex-row items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Planning Poker</h1>
               <p className="text-gray-600 text-sm">
@@ -565,7 +565,7 @@ export default function Session() {
             <div className="flex gap-3 items-center">
               <button
                 onClick={handleReset}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition flex items-center gap-2"
+                className="hidden md:flex px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition items-center gap-2"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -584,6 +584,18 @@ export default function Session() {
                 </button>
                 {showMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    <button
+                      onClick={() => {
+                        handleReset();
+                        setShowMenu(false);
+                      }}
+                      className="md:hidden w-full px-4 py-2 flex items-center gap-2 text-gray-700 hover:bg-gray-100 transition text-left"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                      </svg>
+                      Reset
+                    </button>
                     <a
                       href="/"
                       onClick={(e) => {
@@ -605,6 +617,7 @@ export default function Session() {
                       </svg>
                       New Session
                     </a>
+                    <div className="border-t border-gray-200 my-1"></div>
                     <button
                       onClick={() => {
                         setShowDeleteConfirm(true);
