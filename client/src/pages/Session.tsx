@@ -647,6 +647,7 @@ export default function Session() {
               totalUsers={allUsers.length}
               onMakeChoice={handleMakeChoice}
               onReveal={handleReveal}
+              onReset={handleReset}
               pointOptions={POINT_OPTIONS}
               users={session.users}
               revealed={session.revealed}
