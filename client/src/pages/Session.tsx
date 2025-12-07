@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { io, Socket } from 'socket.io-client';
 import { getSession, deleteSession, createSession } from '../utils/api';
 import { getUserData, saveUserData, generateUserId, UserData } from '../utils/storage';
 import { SessionData } from '../types';
+import { useSessionSocket } from '../hooks/useSessionSocket';
 import UserList from '../components/UserList';
 import VotingCards from '../components/VotingCards';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -15,14 +15,12 @@ import SessionHeader from '../components/SessionHeader';
 import Toast from '../components/Toast';
 
 const POINT_OPTIONS = ['0.5', '1', '1.5', '2', '2.5', '3+', '?'];
-const API_URL = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:3001' : window.location.origin);
 
 export default function Session() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const [session, setSession] = useState<SessionData | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -32,8 +30,23 @@ export default function Session() {
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [isParticipantsCollapsed, setIsParticipantsCollapsed] = useState(false);
   const [showToast, setShowToast] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
   const isJoiningRef = useRef<boolean>(false);
+
+  // WebSocket hook
+  const {
+    emitUpdateUser,
+    emitMakeChoice,
+    emitRevealChoices,
+    emitResetSession,
+    disconnect: disconnectSocket,
+  } = useSessionSocket({
+    sessionId,
+    userData,
+    onSessionUpdate: setSession,
+    onSessionEnded: () => setSessionEnded(true),
+    onError: setError,
+    enabled: !showJoinForm && !!userData,
+  });
 
 
 
@@ -57,54 +70,6 @@ export default function Session() {
       try {
         const sessionData = await getSession(sessionId);
         setSession(sessionData);
-
-        // Connect to socket
-        const newSocket = io(API_URL);
-        socketRef.current = newSocket;
-        setSocket(newSocket);
-
-        newSocket.on('connect', () => {
-          newSocket.emit('joinSession', {
-            sessionId,
-            userId: savedUserData.userId,
-            name: savedUserData.name,
-            email: savedUserData.email,
-            color: savedUserData.color,
-          });
-        });
-
-        newSocket.on('sessionUpdate', (data: SessionData) => {
-          setSession(data);
-        });
-
-        newSocket.on('userJoined', () => {
-          // Session will be updated via sessionUpdate
-        });
-
-        newSocket.on('userUpdated', () => {
-          // Session will be updated via sessionUpdate
-        });
-
-        newSocket.on('choiceMade', () => {
-          // Session will be updated via sessionUpdate
-        });
-
-        newSocket.on('revealChoices', (data: SessionData) => {
-          setSession(data);
-        });
-
-        newSocket.on('sessionReset', (data: SessionData) => {
-          setSession(data);
-        });
-
-        newSocket.on('sessionDeleted', () => {
-          setSessionEnded(true);
-        });
-
-        newSocket.on('error', (data: { message: string }) => {
-          setError(data.message);
-        });
-
         setLoading(false);
       } catch (err) {
         setError('Session not found');
@@ -114,13 +79,7 @@ export default function Session() {
     };
 
     loadSession();
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
-    };
-  }, [sessionId, navigate]);
+  }, [sessionId]);
 
 
 
@@ -138,12 +97,6 @@ export default function Session() {
     // Mark as joining immediately (synchronous)
     isJoiningRef.current = true;
 
-    // Clean up any existing socket connection before creating a new one
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-      socketRef.current = null;
-    }
-
     const userId = getUserData()?.userId || generateUserId();
     const existingColor = getUserData()?.color;
     const userData: UserData = { name, email, userId, color: existingColor };
@@ -158,54 +111,6 @@ export default function Session() {
       try {
         const sessionData = await getSession(sessionId);
         setSession(sessionData);
-
-        // Connect to socket
-        const newSocket = io(API_URL);
-        socketRef.current = newSocket;
-        setSocket(newSocket);
-
-        newSocket.on('connect', () => {
-          newSocket.emit('joinSession', {
-            sessionId,
-            userId: userData.userId,
-            name: userData.name,
-            email: userData.email,
-            color: userData.color,
-          });
-        });
-
-        newSocket.on('sessionUpdate', (data: SessionData) => {
-          setSession(data);
-        });
-
-        newSocket.on('userJoined', () => {
-          // Session will be updated via sessionUpdate
-        });
-
-        newSocket.on('userUpdated', () => {
-          // Session will be updated via sessionUpdate
-        });
-
-        newSocket.on('choiceMade', () => {
-          // Session will be updated via sessionUpdate
-        });
-
-        newSocket.on('revealChoices', (data: SessionData) => {
-          setSession(data);
-        });
-
-        newSocket.on('sessionReset', (data: SessionData) => {
-          setSession(data);
-        });
-
-        newSocket.on('sessionDeleted', () => {
-          setSessionEnded(true);
-        });
-
-        newSocket.on('error', (data: { message: string }) => {
-          setError(data.message);
-        });
-
         setLoading(false);
         isJoiningRef.current = false;
       } catch (err) {
@@ -220,19 +125,13 @@ export default function Session() {
   };
 
   const handleUpdateUser = (name: string, email: string, color?: string) => {
-    if (!socket || !sessionId || !userData) return;
+    if (!userData) return;
 
     const updatedUserData: UserData = { ...userData, name, email, color };
     saveUserData(updatedUserData);
     setUserData(updatedUserData);
 
-    socket.emit('updateUser', {
-      sessionId,
-      userId: userData.userId,
-      name: name.trim(),
-      email: email.trim(),
-      color: color || undefined,
-    });
+    emitUpdateUser(name, email, color);
 
     setShowEditProfileModal(false);
   };
@@ -249,23 +148,15 @@ export default function Session() {
   };
 
   const handleMakeChoice = (choice: string) => {
-    if (!socket || !sessionId || !userData) return;
-
-    socket.emit('makeChoice', {
-      sessionId,
-      userId: userData.userId,
-      choice,
-    });
+    emitMakeChoice(choice);
   };
 
   const handleReveal = () => {
-    if (!socket || !sessionId) return;
-    socket.emit('revealChoices', { sessionId });
+    emitRevealChoices();
   };
 
   const handleReset = () => {
-    if (!socket || !sessionId) return;
-    socket.emit('resetSession', { sessionId });
+    emitResetSession();
   };
 
   const handleShare = async () => {
@@ -377,10 +268,7 @@ export default function Session() {
 
   const handleCreateNewSessionAfterEnd = async () => {
     // Clean up socket connection before navigating
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-      socketRef.current = null;
-    }
+    disconnectSocket();
 
     const savedUserData = getUserData();
     if (!savedUserData || !savedUserData.name.trim()) {
