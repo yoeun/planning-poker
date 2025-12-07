@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { getGravatarUrl } from '../utils/gravatar';
+import Avatar from './Avatar';
 
 interface User {
   name: string;
@@ -159,17 +159,14 @@ export default function VotingCards({
                   {usersForChoice.map(([userId, user]) => {
                     const isCurrentUser = userId === currentUserId;
                     return (
-                      <img
+                      <Avatar
                         key={userId}
-                        src={getGravatarUrl(user.email, 32)}
-                        alt={user.name}
-                        className={`
-                          w-8 h-8 rounded-full border-2 shadow-sm transition-all
-                          ${isCurrentUser
-                            ? 'border-blue-500 ring-2 ring-blue-200'
-                            : 'border-white'
-                          }
-                        `}
+                        name={user.name}
+                        email={user.email}
+                        size={32}
+                        borderClass={isCurrentUser ? 'border-blue-500' : 'border-white'}
+                        ringClass={isCurrentUser ? 'ring-2 ring-blue-200' : ''}
+                        className="shadow-sm"
                         title={user.name + (isCurrentUser ? ' (You)' : '')}
                       />
                     );

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { getGravatarUrl } from '../utils/gravatar';
+import Avatar from './Avatar';
 
 interface User {
   name: string;
@@ -164,17 +164,13 @@ export default function Results({
                       }}
                       title={user.name + (isCurrentUser ? ' (You)' : '')}
                     >
-                      <img
-                        src={getGravatarUrl(user.email, 40)}
-                        alt={user.name}
-                        className={`
-                          w-10 h-10 rounded-full border-2 shadow-sm transition-all
-                          ${isCurrentUser
-                            ? 'border-blue-500 ring-2 ring-blue-200'
-                            : 'border-white'
-                          }
-                          hover:scale-110
-                        `}
+                      <Avatar
+                        name={user.name}
+                        email={user.email}
+                        size={40}
+                        borderClass={isCurrentUser ? 'border-blue-500' : 'border-white'}
+                        ringClass={isCurrentUser ? 'ring-2 ring-blue-200' : ''}
+                        className="shadow-sm hover:scale-110"
                       />
                     </div>
                   );

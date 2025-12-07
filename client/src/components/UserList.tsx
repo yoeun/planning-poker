@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getGravatarUrl } from '../utils/gravatar';
+import Avatar from './Avatar';
 
 interface User {
   name: string;
@@ -121,14 +121,12 @@ export default function UserList({
                 const { opacity, borderClass, hasVoted, isCurrentUser } = getUserStyling(userId);
                 return (
                   <div key={userId} className="relative">
-                    <img
-                      src={getGravatarUrl(user.email, 40)}
-                      alt={user.name}
-                      className={`
-                        w-10 h-10 rounded-full border-2 transition-all
-                        ${isCurrentUser ? 'ring-2 ring-blue-200' : ''}
-                        ${borderClass}
-                      `}
+                    <Avatar
+                      name={user.name}
+                      email={user.email}
+                      size={40}
+                      borderClass={borderClass}
+                      ringClass={isCurrentUser ? 'ring-2 ring-blue-200' : ''}
                       style={{ opacity }}
                       title={user.name + (isCurrentUser ? ' (You)' : '') + (hasVoted ? ' ✓ Voted' : '')}
                     />
@@ -158,14 +156,12 @@ export default function UserList({
               const { opacity, borderClass, hasVoted, isCurrentUser } = getUserStyling(userId);
               return (
                 <div key={userId} className="relative">
-                  <img
-                    src={getGravatarUrl(user.email, 40)}
-                    alt={user.name}
-                    className={`
-                      w-10 h-10 rounded-full border-2 transition-all
-                      ${isCurrentUser ? 'ring-2 ring-blue-200' : ''}
-                      ${borderClass}
-                    `}
+                  <Avatar
+                    name={user.name}
+                    email={user.email}
+                    size={40}
+                    borderClass={borderClass}
+                    ringClass={isCurrentUser ? 'ring-2 ring-blue-200' : ''}
                     style={{ opacity }}
                     title={user.name + (isCurrentUser ? ' (You)' : '') + (hasVoted ? ' ✓ Voted' : '')}
                   />
@@ -188,13 +184,12 @@ export default function UserList({
                 `}
                 style={{ opacity }}
               >
-                <img
-                  src={getGravatarUrl(user.email, 40)}
-                  alt={user.name}
-                  className={`
-                    w-10 h-10 rounded-full border-2 flex-shrink-0 transition-all
-                    ${borderClass}
-                  `}
+                <Avatar
+                  name={user.name}
+                  email={user.email}
+                  size={40}
+                  borderClass={borderClass}
+                  className="flex-shrink-0"
                 />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-gray-900 truncate">
