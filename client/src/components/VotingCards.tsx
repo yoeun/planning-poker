@@ -1,12 +1,6 @@
 import { useMemo } from 'react';
 import Avatar from './Avatar';
-
-interface User {
-  name: string;
-  email: string;
-  color?: string;
-  joinedAt: number;
-}
+import { User } from '../types';
 
 interface VotingCardsProps {
   choices: Record<string, string>;

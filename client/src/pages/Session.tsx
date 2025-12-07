@@ -3,49 +3,19 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import { getSession, deleteSession, createSession } from '../utils/api';
 import { getUserData, saveUserData, generateUserId, UserData } from '../utils/storage';
+import { SessionData } from '../types';
 import UserList from '../components/UserList';
 import VotingCards from '../components/VotingCards';
-import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
+import CreateNewSessionModal from '../components/CreateNewSessionModal';
+import EditProfileModal from '../components/EditProfileModal';
+import JoinSessionForm from '../components/JoinSessionForm';
+import SessionEnded from '../components/SessionEnded';
+import SessionHeader from '../components/SessionHeader';
 import Toast from '../components/Toast';
 
 const POINT_OPTIONS = ['0.5', '1', '1.5', '2', '2.5', '3+', '?'];
 const API_URL = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:3001' : window.location.origin);
-
-// Predefined color palette (16 colors)
-const COLOR_PALETTE = [
-  '#EF4444', // red
-  '#F97316', // orange
-  '#F59E0B', // amber
-  '#EAB308', // yellow
-  '#84CC16', // lime
-  '#22C55E', // green
-  '#10B981', // emerald
-  '#14B8A6', // teal
-  '#06B6D4', // cyan
-  '#3B82F6', // blue
-  '#6366F1', // indigo
-  '#8B5CF6', // violet
-  '#A855F7', // purple
-  '#D946EF', // fuchsia
-  '#EC4899', // pink
-  '#F43F5E', // rose
-];
-
-interface User {
-  name: string;
-  email: string;
-  color?: string;
-  joinedAt: number;
-}
-
-interface SessionData {
-  id: string;
-  users: Record<string, User>;
-  choices: Record<string, string>;
-  revealed: boolean;
-  createdAt: number;
-}
 
 export default function Session() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -58,39 +28,14 @@ export default function Session() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showEndSessionConfirm, setShowEndSessionConfirm] = useState(false);
   const [sessionEnded, setSessionEnded] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
   const [showJoinForm, setShowJoinForm] = useState(false);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
-  const [editName, setEditName] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editColor, setEditColor] = useState('');
   const [isParticipantsCollapsed, setIsParticipantsCollapsed] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
-  const [creatingNewSession, setCreatingNewSession] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const isJoiningRef = useRef<boolean>(false);
-  const menuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const savedUserData = getUserData();
-    if (savedUserData) {
-      setName(savedUserData.name);
-      setEmail(savedUserData.email);
-      setEditName(savedUserData.name);
-      setEditEmail(savedUserData.email);
-      setEditColor(savedUserData.color || '');
-    }
-  }, []);
 
-  useEffect(() => {
-    if (userData) {
-      setEditName(userData.name);
-      setEditEmail(userData.email);
-      setEditColor(userData.color || '');
-    }
-  }, [userData]);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -177,32 +122,11 @@ export default function Session() {
     };
   }, [sessionId, navigate]);
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(false);
-      }
-    };
-
-    if (showMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showMenu]);
 
 
-  const handleJoinSession = () => {
+  const handleJoinSession = (name: string, email: string) => {
     // Prevent concurrent executions using ref (synchronous check)
     if (isJoiningRef.current || loading) {
-      return;
-    }
-
-    if (!name.trim()) {
-      setError('Please enter your name');
       return;
     }
 
@@ -222,7 +146,7 @@ export default function Session() {
 
     const userId = getUserData()?.userId || generateUserId();
     const existingColor = getUserData()?.color;
-    const userData: UserData = { name: name.trim(), email: email.trim(), userId, color: existingColor };
+    const userData: UserData = { name, email, userId, color: existingColor };
     saveUserData(userData);
     setUserData(userData);
     setShowJoinForm(false);
@@ -315,36 +239,13 @@ export default function Session() {
 
   const handleEditProfileClick = () => {
     if (userData) {
-      setEditName(userData.name);
-      setEditEmail(userData.email);
-      setEditColor(userData.color || '');
       setError('');
       setShowEditProfileModal(true);
     }
   };
 
-  const handleSaveProfile = () => {
-    if (!editName.trim()) {
-      setError('Please enter your name');
-      return;
-    }
-    
-    // Normalize color: ensure it starts with # if provided
-    let normalizedColor = editColor.trim();
-    if (normalizedColor && !normalizedColor.startsWith('#')) {
-      normalizedColor = '#' + normalizedColor;
-    }
-    
-    // Validate hex color format if provided
-    if (normalizedColor && normalizedColor !== '#') {
-      const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
-      if (!hexRegex.test(normalizedColor)) {
-        setError('Please enter a valid hex color code (e.g., #FF5733 or FF5733)');
-        return;
-      }
-    }
-    
-    handleUpdateUser(editName.trim(), editEmail.trim(), normalizedColor || undefined);
+  const handleSaveProfile = (name: string, email: string, color?: string) => {
+    handleUpdateUser(name, email, color);
   };
 
   const handleMakeChoice = (choice: string) => {
@@ -433,6 +334,10 @@ export default function Session() {
     }
   };
 
+  const handleEndSession = () => {
+    setShowDeleteConfirm(true);
+  };
+
   const handleEndSessionAndCreateNew = async () => {
     if (!sessionId) return;
 
@@ -483,83 +388,23 @@ export default function Session() {
       return;
     }
 
-    setCreatingNewSession(true);
     setError('');
 
-    try {
-      const { sessionId: newSessionId } = await createSession();
-      // Use window.location.href to force a full page reload and reset all state
-      window.location.href = `/session/${newSessionId}`;
-    } catch (err) {
-      setError('Failed to create new session');
-      setCreatingNewSession(false);
-      console.error(err);
-    }
+    const { sessionId: newSessionId } = await createSession();
+    // Use window.location.href to force a full page reload and reset all state
+    window.location.href = `/session/${newSessionId}`;
   };
 
   if (showJoinForm) {
+    const savedUserData = getUserData();
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 w-full max-w-md">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Join Session</h1>
-          <p className="text-gray-600 mb-8">Enter your details to join the planning session</p>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-4 mb-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                Your Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your name"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleJoinSession();
-                  }
-                }}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email (optional)
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your.email@example.com"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleJoinSession();
-                  }
-                }}
-              />
-              <p className="text-xs text-gray-500 mt-1">Used for Gravatar avatar</p>
-            </div>
-          </div>
-
-          <button
-            onClick={handleJoinSession}
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Joining...' : 'Join Session'}
-          </button>
-        </div>
-      </div>
+      <JoinSessionForm
+        onJoin={handleJoinSession}
+        error={error}
+        loading={loading}
+        initialName={savedUserData?.name || ''}
+        initialEmail={savedUserData?.email || ''}
+      />
     );
   }
 
@@ -593,26 +438,10 @@ export default function Session() {
   // Show session ended message if session was deleted
   if (sessionEnded) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 w-full max-w-md">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Session Ended</h1>
-          <p className="text-gray-600 mb-8">
-            The session has been ended by the host. All participants have been disconnected.
-          </p>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-              {error}
-            </div>
-          )}
-          <button
-            onClick={handleCreateNewSessionAfterEnd}
-            disabled={creatingNewSession}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {creatingNewSession ? 'Creating...' : 'Create New Session'}
-          </button>
-        </div>
-      </div>
+      <SessionEnded
+        onCreateNewSession={handleCreateNewSessionAfterEnd}
+        error={error}
+      />
     );
   }
 
@@ -623,108 +452,13 @@ export default function Session() {
   return (
     <div className="min-h-screen p-4 pb-8">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
-          <div className="flex flex-row items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Planning Poker</h1>
-              <p className="text-gray-600 text-sm">
-                Session ID: <span className="font-mono font-semibold">{sessionId}</span>
-              </p>
-            </div>
-            <div className="flex gap-3 items-center">
-              <button
-                onClick={handleReset}
-                className="hidden md:flex px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition items-center gap-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                </svg>
-                Reset
-              </button>
-              <button
-                onClick={handleShare}
-                className="hidden md:flex px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg shadow-sm transition items-center gap-2"
-                title="Share session"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5" style={{ transform: 'rotate(-45deg)' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                </svg>
-                Share
-              </button>
-              <button
-                onClick={handleShare}
-                className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg shadow-sm transition flex items-center justify-center md:hidden"
-                title="Share session"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5" style={{ transform: 'rotate(-45deg)' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                </svg>
-              </button>
-              <div className="relative" ref={menuRef}>
-                <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg shadow-sm transition flex items-center justify-center"
-                  title="More options"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
-                  </svg>
-                </button>
-                {showMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                    <button
-                      onClick={() => {
-                        handleReset();
-                        setShowMenu(false);
-                      }}
-                      className="md:hidden w-full px-4 py-2 flex items-center gap-2 text-gray-700 hover:bg-gray-100 transition text-left"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                      </svg>
-                      Reset
-                    </button>
-                    <a
-                      href="/"
-                      onClick={(e) => {
-                        handleNewSession(e);
-                        setShowMenu(false);
-                      }}
-                      onAuxClick={(e) => {
-                        // Handle middle-click (button 1) - let it open in new tab
-                        if (e.button === 1) {
-                          // Don't prevent default, let the browser handle it
-                          return;
-                        }
-                        setShowMenu(false);
-                      }}
-                      className="px-4 py-2 flex items-center gap-2 text-gray-700 hover:bg-gray-100 transition"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                      </svg>
-                      New Session
-                    </a>
-                    <div className="border-t border-gray-200 my-1"></div>
-                    <button
-                      onClick={() => {
-                        setShowDeleteConfirm(true);
-                        setShowMenu(false);
-                      }}
-                      className="w-full px-4 py-2 flex items-center gap-2 text-gray-700 hover:bg-gray-100 transition text-left"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                      </svg>
-                      End Session
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <SessionHeader
+          sessionId={sessionId || ''}
+          onReset={handleReset}
+          onShare={handleShare}
+          onNewSession={handleNewSession}
+          onEndSession={handleEndSession}
+        />
 
         {/* Main Content Area */}
         <div className="flex flex-col md:flex-row gap-6">
@@ -774,203 +508,28 @@ export default function Session() {
       />
 
       {/* End Session and Create New Confirmation Modal */}
-      <Modal
+      <CreateNewSessionModal
         isOpen={showEndSessionConfirm}
         onClose={() => setShowEndSessionConfirm(false)}
-      >
-        <Modal.Header showCloseButton={true} onClose={() => setShowEndSessionConfirm(false)}>
-          <h3 className="text-xl font-bold text-gray-900">Create New Session</h3>
-        </Modal.Header>
-        <Modal.Body>
-          <p className="text-gray-600">
-            Would you like to end the current session? Ending it will disconnect all other participants.
-          </p>
-        </Modal.Body>
-        <Modal.Footer>
-          <div className="flex flex-col gap-3">
-            <button
-              onClick={handleEndSessionAndCreateNew}
-              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
-            >
-              Yes
-            </button>
-            <button
-              onClick={handleKeepSessionAndCreateNew}
-              className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg transition"
-            >
-              No, keep current session
-            </button>
-          </div>
-        </Modal.Footer>
-      </Modal>
+        onEndSessionAndCreateNew={handleEndSessionAndCreateNew}
+        onKeepSessionAndCreateNew={handleKeepSessionAndCreateNew}
+      />
 
       {/* Edit Profile Modal */}
-      <Modal
-        isOpen={showEditProfileModal}
-        onClose={() => {
-          setShowEditProfileModal(false);
-          setError('');
-          // Reset edit color to current user color when closing
-          if (userData) {
-            setEditColor(userData.color || '');
-          }
-        }}
-      >
-        <Modal.Header showCloseButton={true} onClose={() => setShowEditProfileModal(false)}>
-          <h3 className="text-xl font-bold text-gray-900">Edit Profile</h3>
-        </Modal.Header>
-        <Modal.Body>
-          <div className="space-y-4">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-            <div>
-              <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700 mb-2">
-                Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="edit-name"
-                type="text"
-                value={editName}
-                onChange={(e) => {
-                  setEditName(e.target.value);
-                  setError('');
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                placeholder="Enter your name"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSaveProfile();
-                  }
-                }}
-                autoFocus
-              />
-            </div>
-            <div>
-              <label htmlFor="edit-email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email (optional)
-              </label>
-              <input
-                id="edit-email"
-                type="email"
-                value={editEmail}
-                onChange={(e) => setEditEmail(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                placeholder="your.email@example.com"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSaveProfile();
-                  }
-                }}
-              />
-              <p className="text-xs text-gray-500 mt-1">Used for Gravatar avatar</p>
-            </div>
-            <div>
-              <label htmlFor="edit-color" className="block text-sm font-medium text-gray-700 mb-2">
-                Color (optional)
-              </label>
-              <div className="space-y-3">
-                <div className="grid grid-cols-8 gap-2">
-                  {COLOR_PALETTE.map((color) => {
-                    const isSelected = editColor && editColor.replace('#', '').toUpperCase() === color.replace('#', '').toUpperCase();
-                    return (
-                      <button
-                        key={color}
-                        type="button"
-                        onClick={() => {
-                          setEditColor(color);
-                          setError('');
-                        }}
-                        className={`
-                          w-10 h-10 rounded-lg border-2 transition-all hover:scale-110
-                          ${isSelected ? 'border-gray-900 ring-2 ring-gray-300' : 'border-gray-300 hover:border-gray-400'}
-                        `}
-                        style={{ backgroundColor: color }}
-                        title={color}
-                      >
-                        {isSelected && (
-                          <svg
-                            className="w-5 h-5 mx-auto text-white drop-shadow-md"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    id="edit-color"
-                    type="text"
-                    value={editColor}
-                    onChange={(e) => {
-                      setEditColor(e.target.value);
-                      setError('');
-                    }}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none font-mono text-sm"
-                    placeholder="#FF5733 or FF5733"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSaveProfile();
-                      }
-                    }}
-                  />
-                  {(() => {
-                    const normalizedColor = editColor.trim();
-                    if (!normalizedColor) return null;
-                    const colorWithHash = normalizedColor.startsWith('#') ? normalizedColor : '#' + normalizedColor;
-                    const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
-                    const isValid = hexRegex.test(colorWithHash);
-                    return (
-                      <div
-                        className={`w-10 h-10 rounded-lg border-2 flex-shrink-0 ${
-                          isValid ? 'border-gray-300' : 'border-red-300'
-                        }`}
-                        style={{ backgroundColor: isValid ? colorWithHash : 'transparent' }}
-                        title={isValid ? 'Preview' : 'Invalid color'}
-                      >
-                        {!isValid && normalizedColor && (
-                          <svg
-                            className="w-5 h-5 mx-auto mt-2 text-red-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
-                <p className="text-xs text-gray-500">Choose a color from the grid or enter a custom hex code</p>
-              </div>
-            </div>
-          </div>
-        </Modal.Body>
-        <Modal.Footer>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowEditProfileModal(false)}
-              className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg transition"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSaveProfile}
-              className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
-            >
-              Save
-            </button>
-          </div>
-        </Modal.Footer>
-      </Modal>
+      {userData && (
+        <EditProfileModal
+          isOpen={showEditProfileModal}
+          onClose={() => {
+            setShowEditProfileModal(false);
+            setError('');
+          }}
+          initialName={userData.name}
+          initialEmail={userData.email}
+          initialColor={userData.color}
+          onSave={handleSaveProfile}
+          error={error}
+        />
+      )}
 
       {/* Toast Notification */}
       <Toast

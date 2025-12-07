@@ -1,12 +1,6 @@
 import { useState } from 'react';
 import Avatar from './Avatar';
-
-interface User {
-  name: string;
-  email: string;
-  color?: string;
-  joinedAt: number;
-}
+import { User } from '../types';
 
 interface UserListProps {
   users: Record<string, User>;
