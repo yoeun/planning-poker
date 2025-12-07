@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getGravatarUrl } from '../utils/gravatar';
 
 interface User {
@@ -52,58 +52,103 @@ export default function Results({
     return () => clearInterval(revealInterval);
   }, [choices]);
 
-  const userList = Object.entries(users).sort((a, b) => a[1].joinedAt - b[1].joinedAt);
+  // Group users by their choice
+  const usersByChoice = useMemo(() => {
+    const grouped: Record<string, Array<[string, User]>> = {};
+    
+    // Initialize all point options
+    pointOptions.forEach(option => {
+      grouped[option] = [];
+    });
+    
+    // Group users by their choice
+    Object.entries(users).forEach(([userId, user]) => {
+      const choice = choices[userId];
+      if (choice && grouped[choice]) {
+        grouped[choice].push([userId, user]);
+      }
+    });
+    
+    // Sort users within each group by join time
+    Object.keys(grouped).forEach(choice => {
+      grouped[choice].sort((a, b) => a[1].joinedAt - b[1].joinedAt);
+    });
+    
+    return grouped;
+  }, [users, choices, pointOptions]);
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
       <h2 className="text-xl font-bold text-gray-900 mb-6">Results</h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {userList.map(([userId, user], index) => {
-          const choice = choices[userId];
-          const isRevealed = revealed.has(userId) || allRevealed;
-          const isCurrentUser = userId === currentUserId;
+      {/* Point cards with avatars below */}
+      <div className="flex flex-wrap justify-center gap-6 mb-6">
+        {pointOptions.map((option) => {
+          const usersForChoice = usersByChoice[option] || [];
+          const voteCount = usersForChoice.length;
+          const isSelected = choices[currentUserId] === option;
 
           return (
             <div
-              key={userId}
-              className={`
-                relative rounded-xl border-2 p-4 transition-all duration-500
-                ${isCurrentUser
-                  ? 'bg-blue-50 border-blue-300'
-                  : 'bg-gray-50 border-gray-200'
-                }
-                ${isRevealed ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-90 rotate-3'}
-              `}
-              style={{
-                transitionDelay: isRevealed ? '0ms' : `${index * 150}ms`,
-              }}
+              key={option}
+              className="flex flex-col items-center gap-3"
             >
-              <div className="flex items-center gap-3 mb-3">
-                <img
-                  src={getGravatarUrl(user.email, 40)}
-                  alt={user.name}
-                  className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-900 truncate">
-                    {user.name}
-                    {isCurrentUser && (
-                      <span className="ml-2 text-xs text-blue-600">(You)</span>
-                    )}
-                  </div>
-                </div>
-              </div>
+              {/* Point Card */}
               <div
                 className={`
-                  text-center py-4 rounded-lg font-bold text-2xl transition-all
-                  ${isRevealed
-                    ? 'bg-white border-2 border-gray-300 shadow-md'
-                    : 'bg-gray-200 border-2 border-gray-400'
+                  aspect-square w-20 rounded-xl border-2 transition-all transform
+                  flex items-center justify-center font-bold text-2xl
+                  ${isSelected
+                    ? 'bg-blue-600 border-blue-700 text-white shadow-lg scale-105'
+                    : voteCount > 0
+                    ? 'bg-green-50 border-green-300 text-gray-900 shadow-md'
+                    : 'bg-white border-gray-300 text-gray-700'
                   }
                 `}
               >
-                {isRevealed ? choice || '—' : '?'}
+                {option}
+              </div>
+
+              {/* Vote count badge */}
+              {voteCount > 0 && (
+                <div className="text-xs font-semibold text-gray-600">
+                  {voteCount} {voteCount === 1 ? 'vote' : 'votes'}
+                </div>
+              )}
+
+              {/* Avatar column */}
+              <div className="flex flex-col items-center gap-2 min-h-[60px]">
+                {usersForChoice.map(([userId, user], index) => {
+                  const isRevealed = revealed.has(userId) || allRevealed;
+                  const isCurrentUser = userId === currentUserId;
+
+                  return (
+                    <div
+                      key={userId}
+                      className={`
+                        transition-all duration-300
+                        ${isRevealed ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}
+                      `}
+                      style={{
+                        transitionDelay: isRevealed ? '0ms' : `${index * 150}ms`,
+                      }}
+                      title={user.name + (isCurrentUser ? ' (You)' : '')}
+                    >
+                      <img
+                        src={getGravatarUrl(user.email, 40)}
+                        alt={user.name}
+                        className={`
+                          w-10 h-10 rounded-full border-2 shadow-sm transition-all
+                          ${isCurrentUser
+                            ? 'border-blue-500 ring-2 ring-blue-200'
+                            : 'border-white'
+                          }
+                          hover:scale-110
+                        `}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );

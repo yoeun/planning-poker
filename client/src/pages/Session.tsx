@@ -5,7 +5,6 @@ import { getSession, deleteSession, createSession } from '../utils/api';
 import { getUserData, saveUserData, generateUserId, UserData } from '../utils/storage';
 import UserList from '../components/UserList';
 import VotingCards from '../components/VotingCards';
-import Results from '../components/Results';
 import Modal from '../components/Modal';
 import ConfirmationModal from '../components/ConfirmationModal';
 
@@ -567,26 +566,18 @@ export default function Session() {
 
         {/* Main Voting Area */}
         <div>
-          {session.revealed ? (
-            <Results
-              users={session.users}
-              choices={session.choices}
-              currentUserId={userData.userId}
-              onMakeChoice={handleMakeChoice}
-              pointOptions={POINT_OPTIONS}
-            />
-          ) : (
-            <VotingCards
-              choices={session.choices}
-              currentUserId={userData.userId}
-              currentUserChoice={currentUserChoice}
-              allChosen={allChosen}
-              totalUsers={allUsers.length}
-              onMakeChoice={handleMakeChoice}
-              onReveal={handleReveal}
-              pointOptions={POINT_OPTIONS}
-            />
-          )}
+          <VotingCards
+            choices={session.choices}
+            currentUserId={userData.userId}
+            currentUserChoice={currentUserChoice}
+            allChosen={allChosen}
+            totalUsers={allUsers.length}
+            onMakeChoice={handleMakeChoice}
+            onReveal={handleReveal}
+            pointOptions={POINT_OPTIONS}
+            users={session.users}
+            revealed={session.revealed}
+          />
         </div>
       </div>
 
