@@ -31,3 +31,6 @@ yarn-error.log*
 # Docker
 docker-compose.override.yml
 
+
+*storybook.log
+storybook-static

@@ -94,7 +94,7 @@ export default function VotingCards({
         </h2>
         {revealed && (
           <p className="text-gray-600 text-sm">
-            Results are revealed. You can change your choice below.
+            You can change your choice below.
           </p>
         )}
       </div>
