@@ -1,82 +1,16 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { getUserData, UserData } from '../utils/storage';
+import { describe, it, expect } from 'vitest';
 
-// Mock socket.io-client
-vi.mock('socket.io-client', () => ({
-  default: vi.fn(() => ({
-    on: vi.fn(),
-    emit: vi.fn(),
-    disconnect: vi.fn(),
-  })),
-  io: vi.fn(() => ({
-    on: vi.fn(),
-    emit: vi.fn(),
-    disconnect: vi.fn(),
-  })),
-}));
-
-// Mock API functions
-vi.mock('../utils/api', () => ({
-  getSession: vi.fn(() => Promise.resolve({
-    id: 'test-session',
-    users: {},
-    choices: {},
-    revealed: false,
-    createdAt: Date.now(),
-  })),
-  deleteSession: vi.fn(() => Promise.resolve()),
-  createSession: vi.fn(() => Promise.resolve({ sessionId: 'new-session' })),
-}));
-
-// Mock storage
-vi.mock('../utils/storage', async () => {
-  const actual = await vi.importActual('../utils/storage');
-  return {
-    ...actual,
-    getUserData: vi.fn(),
-    saveUserData: vi.fn(),
-  };
-});
-
-
-describe('Session - Color Selection', () => {
-  const mockUserData: UserData = {
-    name: 'Test User',
-    email: 'test@example.com',
-    userId: 'user123',
-  };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    localStorage.clear();
-    (getUserData as any).mockReturnValue(mockUserData);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('should display color picker in edit profile modal', async () => {
-    
-    // Mock socket connection
-    const mockSocket = {
-      on: vi.fn((event, callback) => {
-        if (event === 'connect') {
-          setTimeout(() => callback(), 0);
-        }
-      }),
-      emit: vi.fn(),
-      disconnect: vi.fn(),
-    };
-    
-    const { io } = await import('socket.io-client');
-    (io as any).mockReturnValue(mockSocket);
-
-    // This test would need more setup to actually render the modal
-    // For now, we'll test the color validation logic
-    expect(true).toBe(true);
-  });
-});
+/**
+ * Color Validation Tests
+ * 
+ * These tests validate color normalization and validation logic
+ * used throughout the application, particularly in the Session flow
+ * for user profile color selection.
+ * 
+ * Note: This file was originally named Session.test.tsx but doesn't
+ * actually test the Session component. The Session component is tested
+ * via SessionView.test.tsx (presentational component) and integration tests.
+ */
 
 describe('Color Validation', () => {
   it('should normalize color with # prefix', () => {

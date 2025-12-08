@@ -4,17 +4,7 @@ import { getSession, deleteSession, createSession } from '../utils/api';
 import { getUserData, saveUserData, generateUserId, UserData } from '../utils/storage';
 import { SessionData } from '../types';
 import { useSessionSocket } from '../hooks/useSessionSocket';
-import UserList from '../components/UserList';
-import VotingCards from '../components/VotingCards';
-import ConfirmationModal from '../components/ConfirmationModal';
-import CreateNewSessionModal from '../components/CreateNewSessionModal';
-import EditProfileModal from '../components/EditProfileModal';
-import JoinSessionForm from '../components/JoinSessionForm';
-import SessionEnded from '../components/SessionEnded';
-import SessionHeader from '../components/SessionHeader';
-import Toast from '../components/Toast';
-
-const POINT_OPTIONS = ['0.5', '1', '1.5', '2', '2.5', '3+', '?'];
+import SessionView from './SessionView';
 
 export default function Session() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -283,148 +273,46 @@ export default function Session() {
     window.location.href = `/session/${newSessionId}`;
   };
 
-  if (showJoinForm) {
-    const savedUserData = getUserData();
-    return (
-      <JoinSessionForm
-        onJoin={handleJoinSession}
-        error={error}
-        loading={loading}
-        initialName={savedUserData?.name || ''}
-        initialEmail={savedUserData?.email || ''}
-      />
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-600">Loading session...</div>
-      </div>
-    );
-  }
-
-  if (error && !session) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 max-w-md">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Error</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <button
-            onClick={() => navigate('/')}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg"
-          >
-            Go Home
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!session || !userData) return null;
-
-  // Show session ended message if session was deleted
-  if (sessionEnded) {
-    return (
-      <SessionEnded
-        onCreateNewSession={handleCreateNewSessionAfterEnd}
-        error={error}
-      />
-    );
-  }
-
-  const currentUserChoice = session.choices[userData.userId];
-  const allUsers = Object.keys(session.users);
-  const allChosen = allUsers.every(uid => session.choices[uid] !== undefined);
-
+  const savedUserData = getUserData();
+  
   return (
-    <div className="min-h-screen p-4 pb-8">
-      <div className="max-w-6xl mx-auto">
-        <SessionHeader
-          sessionId={sessionId || ''}
-          onReset={handleReset}
-          onShare={handleShare}
-          onNewSession={handleNewSession}
-          onEndSession={handleEndSession}
-        />
-
-        {/* Main Content Area */}
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* Participants */}
-          <div className={`md:flex-shrink-0 transition-all ${isParticipantsCollapsed ? 'md:w-auto' : 'md:w-80'}`}>
-            <UserList
-              users={session.users}
-              currentUserId={userData.userId}
-              onEditProfile={handleEditProfileClick}
-              isCollapsed={isParticipantsCollapsed}
-              onToggleCollapse={() => setIsParticipantsCollapsed(!isParticipantsCollapsed)}
-              choices={session.choices}
-              allChosen={allChosen}
-              revealed={session.revealed}
-            />
-          </div>
-
-          {/* Main Voting Area */}
-          <div className="flex-1">
-            <VotingCards
-              choices={session.choices}
-              currentUserId={userData.userId}
-              currentUserChoice={currentUserChoice}
-              allChosen={allChosen}
-              totalUsers={allUsers.length}
-              onMakeChoice={handleMakeChoice}
-              onReveal={handleReveal}
-              onReset={handleReset}
-              pointOptions={POINT_OPTIONS}
-              users={session.users}
-              revealed={session.revealed}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* End Session Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleDelete}
-        title="End Session?"
-        message="This will permanently delete the session. All users will be disconnected."
-        confirmText="End"
-        cancelText="Cancel"
-        confirmButtonStyle="danger"
-      />
-
-      {/* End Session and Create New Confirmation Modal */}
-      <CreateNewSessionModal
-        isOpen={showEndSessionConfirm}
-        onClose={() => setShowEndSessionConfirm(false)}
-        onEndSessionAndCreateNew={handleEndSessionAndCreateNew}
-        onKeepSessionAndCreateNew={handleKeepSessionAndCreateNew}
-      />
-
-      {/* Edit Profile Modal */}
-      {userData && (
-        <EditProfileModal
-          isOpen={showEditProfileModal}
-          onClose={() => {
-            setShowEditProfileModal(false);
-            setError('');
-          }}
-          initialName={userData.name}
-          initialEmail={userData.email}
-          initialColor={userData.color}
-          onSave={handleSaveProfile}
-          error={error}
-        />
-      )}
-
-      {/* Toast Notification */}
-      <Toast
-        message="URL copied to clipboard!"
-        isVisible={showToast}
-        onClose={() => setShowToast(false)}
-      />
-    </div>
+    <SessionView
+      session={session}
+      userData={userData}
+      sessionId={sessionId || ''}
+      loading={loading}
+      error={error}
+      showJoinForm={showJoinForm}
+      sessionEnded={sessionEnded}
+      showDeleteConfirm={showDeleteConfirm}
+      showEndSessionConfirm={showEndSessionConfirm}
+      showEditProfileModal={showEditProfileModal}
+      isParticipantsCollapsed={isParticipantsCollapsed}
+      showToast={showToast}
+      onJoinSession={handleJoinSession}
+      onEditProfileClick={handleEditProfileClick}
+      onSaveProfile={handleSaveProfile}
+      onMakeChoice={handleMakeChoice}
+      onReveal={handleReveal}
+      onReset={handleReset}
+      onShare={handleShare}
+      onDelete={handleDelete}
+      onNewSession={handleNewSession}
+      onEndSession={handleEndSession}
+      onEndSessionAndCreateNew={handleEndSessionAndCreateNew}
+      onKeepSessionAndCreateNew={handleKeepSessionAndCreateNew}
+      onCreateNewSessionAfterEnd={handleCreateNewSessionAfterEnd}
+      onToggleParticipantsCollapse={() => setIsParticipantsCollapsed(!isParticipantsCollapsed)}
+      onCloseDeleteConfirm={() => setShowDeleteConfirm(false)}
+      onCloseEndSessionConfirm={() => setShowEndSessionConfirm(false)}
+      onCloseEditProfileModal={() => {
+        setShowEditProfileModal(false);
+        setError('');
+      }}
+      onCloseToast={() => setShowToast(false)}
+      onGoHome={() => navigate('/')}
+      initialName={savedUserData?.name || ''}
+      initialEmail={savedUserData?.email || ''}
+    />
   );
 }
