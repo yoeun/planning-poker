@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import Avatar from './Avatar';
 import { User } from '../types';
 
@@ -33,6 +34,19 @@ export default function VotingCards({
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const prevRevealedRef = useRef(revealed);
 
+  // Check if all users who voted chose the same card
+  const allVotedSame = useMemo(() => {
+    if (!revealed) return false;
+    
+    const choiceValues = Object.values(choices).filter(choice => choice !== undefined);
+    // Need at least one vote to celebrate
+    if (choiceValues.length === 0) return false;
+    
+    // Check if all choices are the same (regardless of how many users voted)
+    const firstChoice = choiceValues[0];
+    return choiceValues.every(choice => choice === firstChoice);
+  }, [revealed, choices]);
+
   // Track when revealed changes from false to true
   useEffect(() => {
     if (revealed && !prevRevealedRef.current) {
@@ -45,6 +59,42 @@ export default function VotingCards({
     }
     prevRevealedRef.current = revealed;
   }, [revealed]);
+
+  // Trigger confetti when all users vote for the same card (only on reveal, not page load)
+  useEffect(() => {
+    // Only trigger when revealed changes from false to true AND all votes are the same
+    if (revealed && !prevRevealedRef.current && allVotedSame) {
+      // Trigger confetti with a celebration effect
+      const duration = 3000;
+      const end = Date.now() + duration;
+
+      const confettiAnimation = () => {
+        confetti({
+          particleCount: 3,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'],
+        });
+        confetti({
+          particleCount: 3,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'],
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(confettiAnimation);
+        }
+      };
+
+      // Start confetti after a short delay to let card flip animation complete
+      setTimeout(() => {
+        confettiAnimation();
+      }, 700);
+    }
+  }, [revealed, allVotedSame]);
 
   // Group users by their choice
   const usersByChoice = useMemo(() => {
