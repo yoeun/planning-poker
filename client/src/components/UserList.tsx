@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Avatar from './Avatar';
 import { User } from '../types';
+import ChevronDown from '../icons/ChevronDown';
 
 interface UserListProps {
   users: Record<string, User>;
@@ -76,14 +77,7 @@ export default function UserList({
             className="text-gray-500 hover:text-gray-700 transition-colors"
             title="Collapse participants list"
           >
-            <svg
-              className="w-5 h-5 transition-transform rotate-180"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+            <ChevronDown className="w-5 h-5 transition-transform rotate-180" />
           </button>
         </div>
       )}
@@ -101,14 +95,7 @@ export default function UserList({
                 className="text-gray-500 hover:text-gray-700 transition-colors"
                 title="Expand participants list"
               >
-                <svg
-                  className="w-5 h-5 transition-transform"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                <ChevronDown className="w-5 h-5 transition-transform" />
               </button>
             </div>
             <div className="flex flex-wrap gap-2">

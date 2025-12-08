@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import Modal from './Modal';
+import Checkmark from '../icons/Checkmark';
+import CloseIcon from '../icons/CloseIcon';
 
 // Predefined color palette (16 colors)
 const COLOR_PALETTE = [
@@ -171,14 +173,7 @@ export default function EditProfileModal({
                       title={paletteColor}
                     >
                       {isSelected && (
-                        <svg
-                          className="w-5 h-5 mx-auto text-white drop-shadow-md"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
+                        <Checkmark className="w-5 h-5 mx-auto text-white drop-shadow-md" />
                       )}
                     </button>
                   );
@@ -216,14 +211,7 @@ export default function EditProfileModal({
                       title={isValid ? 'Preview' : 'Invalid color'}
                     >
                       {!isValid && normalizedColor && (
-                        <svg
-                          className="w-5 h-5 mx-auto mt-2 text-red-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <CloseIcon className="w-5 h-5 mx-auto mt-2 text-red-400" strokeWidth={2} />
                       )}
                     </div>
                   );

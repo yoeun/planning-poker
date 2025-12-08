@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
+import CloseIcon from '../icons/CloseIcon';
 
 interface ModalProps {
   isOpen: boolean;
@@ -74,9 +75,7 @@ function ModalHeader({ children, showCloseButton = false, onClose }: ModalHeader
           className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition"
           aria-label="Close"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <CloseIcon className="w-6 h-6" />
         </button>
       )}
       <div className="pr-8">{children}</div>
