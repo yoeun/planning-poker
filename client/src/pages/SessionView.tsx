@@ -42,7 +42,7 @@ export interface SessionViewProps {
   onEndSession: () => void;
   onEndSessionAndCreateNew: () => void;
   onKeepSessionAndCreateNew: () => void;
-  onCreateNewSessionAfterEnd: () => void;
+  onCreateNewSessionAfterEnd: () => Promise<void>;
   onToggleParticipantsCollapse: () => void;
   onCloseDeleteConfirm: () => void;
   onCloseEndSessionConfirm: () => void;

@@ -51,6 +51,9 @@ export const Default: Story = {
     cancelText: 'Cancel',
     confirmButtonStyle: 'default',
     showCloseButton: false,
+    isOpen: true,
+    onClose: () => {},
+    onConfirm: () => {},
   },
 };
 
@@ -63,6 +66,9 @@ export const Danger: Story = {
     cancelText: 'Cancel',
     confirmButtonStyle: 'danger',
     showCloseButton: false,
+    isOpen: true,
+    onClose: () => {},
+    onConfirm: () => {},
   },
 };
 
@@ -75,6 +81,9 @@ export const WithCloseButton: Story = {
     cancelText: 'Cancel',
     confirmButtonStyle: 'default',
     showCloseButton: true,
+    isOpen: true,
+    onClose: () => {},
+    onConfirm: () => {},
   },
 };
 
@@ -87,6 +96,9 @@ export const CustomText: Story = {
     cancelText: 'Discard',
     confirmButtonStyle: 'default',
     showCloseButton: false,
+    isOpen: true,
+    onClose: () => {},
+    onConfirm: () => {},
   },
 };
 

@@ -45,6 +45,9 @@ const EditProfileModalWrapper = (args: any) => {
 export const Default: Story = {
   render: (args) => <EditProfileModalWrapper {...args} />,
   args: {
+    isOpen: true,
+    onClose: () => {},
+    onSave: () => {},
     initialName: 'John Doe',
     initialEmail: 'john.doe@example.com',
     initialColor: '',
@@ -55,6 +58,9 @@ export const Default: Story = {
 export const WithColor: Story = {
   render: (args) => <EditProfileModalWrapper {...args} />,
   args: {
+    isOpen: true,
+    onClose: () => {},
+    onSave: () => {},
     initialName: 'Jane Smith',
     initialEmail: 'jane@example.com',
     initialColor: '#3B82F6',
@@ -65,6 +71,9 @@ export const WithColor: Story = {
 export const WithError: Story = {
   render: (args) => <EditProfileModalWrapper {...args} />,
   args: {
+    isOpen: true,
+    onClose: () => {},
+    onSave: () => {},
     initialName: 'Bob Wilson',
     initialEmail: 'bob@example.com',
     initialColor: '',
@@ -75,6 +84,9 @@ export const WithError: Story = {
 export const Empty: Story = {
   render: (args) => <EditProfileModalWrapper {...args} />,
   args: {
+    isOpen: true,
+    onClose: () => {},
+    onSave: () => {},
     initialName: '',
     initialEmail: '',
     initialColor: '',

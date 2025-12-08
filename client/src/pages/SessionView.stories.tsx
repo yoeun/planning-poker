@@ -91,7 +91,7 @@ const mockHandlers = {
   onKeepSessionAndCreateNew: () => {
     console.log('Keep session and create new');
   },
-  onCreateNewSessionAfterEnd: () => {
+  onCreateNewSessionAfterEnd: async () => {
     console.log('Create new session after end');
   },
   onToggleParticipantsCollapse: () => {

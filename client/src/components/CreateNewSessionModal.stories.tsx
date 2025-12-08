@@ -48,6 +48,11 @@ const CreateNewSessionModalWrapper = (args: any) => {
 
 export const Default: Story = {
   render: (args) => <CreateNewSessionModalWrapper {...args} />,
-  args: {},
+  args: {
+    isOpen: true,
+    onClose: () => {},
+    onEndSessionAndCreateNew: () => {},
+    onKeepSessionAndCreateNew: () => {},
+  },
 };
 

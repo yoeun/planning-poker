@@ -14,7 +14,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const createMockUser = (name: string, email: string, userId: string, color?: string): User => ({
+const createMockUser = (name: string, email: string, _: string, color?: string): User => ({
   name,
   email,
   color,
