@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState, useRef } from 'react';
 import Avatar from './Avatar';
 import { User } from '../types';
 
@@ -30,6 +30,21 @@ export default function VotingCards({
   revealed = false,
 }: VotingCardsProps) {
   const chosenCount = Object.keys(choices).filter(uid => choices[uid] !== undefined).length;
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+  const prevRevealedRef = useRef(revealed);
+
+  // Track when revealed changes from false to true
+  useEffect(() => {
+    if (revealed && !prevRevealedRef.current) {
+      setShouldAnimate(true);
+      // Reset animation state after animation completes
+      const timer = setTimeout(() => {
+        setShouldAnimate(false);
+      }, 600); // Match animation duration
+      return () => clearTimeout(timer);
+    }
+    prevRevealedRef.current = revealed;
+  }, [revealed]);
 
   // Group users by their choice
   const usersByChoice = useMemo(() => {
@@ -99,20 +114,25 @@ export default function VotingCards({
         )}
       </div>
 
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-6">
-        {pointOptions.map((option) => {
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-6" style={{ perspective: '1000px' }}>
+        {pointOptions.map((option, index) => {
           const isSelected = currentUserChoice === option;
           const usersForChoice = usersByChoice[option] || [];
           const voteCount = usersForChoice.length;
           const isMostVoted = revealed && option === mostVotedOption;
           const shouldHighlightYellow = revealed && isSelected && isUserChoiceDifferent;
+          const animationDelay = shouldAnimate ? `${index * 50}ms` : '0ms';
 
           return (
             <div key={option} className="flex flex-col items-center gap-2">
               <button
                 onClick={() => onMakeChoice(option)}
+                style={{
+                  animationDelay: shouldAnimate ? animationDelay : undefined,
+                }}
                 className={`
                   w-full aspect-square rounded-xl border-2 transition-all transform hover:scale-105
+                  ${shouldAnimate ? 'animate-flip-card' : ''}
                   ${revealed && isMostVoted
                     ? 'bg-green-600 border-green-700 text-white shadow-lg scale-105'
                     : revealed && shouldHighlightYellow
