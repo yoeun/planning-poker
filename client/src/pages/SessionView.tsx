@@ -160,20 +160,6 @@ export default function SessionView({
 
         {/* Main Content Area */}
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Participants */}
-          <div className={`md:flex-shrink-0 transition-all ${isParticipantsCollapsed ? 'md:w-auto' : 'md:w-80'}`}>
-            <UserList
-              users={session.users}
-              currentUserId={userData.userId}
-              onEditProfile={onEditProfileClick}
-              isCollapsed={isParticipantsCollapsed}
-              onToggleCollapse={onToggleParticipantsCollapse}
-              choices={session.choices}
-              allChosen={allChosen}
-              revealed={session.revealed}
-            />
-          </div>
-
           {/* Main Voting Area */}
           <div className="flex-1">
             <VotingCards
@@ -187,6 +173,20 @@ export default function SessionView({
               onReset={onReset}
               pointOptions={POINT_OPTIONS}
               users={session.users}
+              revealed={session.revealed}
+            />
+          </div>
+
+          {/* Participants */}
+          <div className={`md:flex-shrink-0 transition-all ${isParticipantsCollapsed ? 'md:w-auto' : 'md:w-80'}`}>
+            <UserList
+              users={session.users}
+              currentUserId={userData.userId}
+              onEditProfile={onEditProfileClick}
+              isCollapsed={isParticipantsCollapsed}
+              onToggleCollapse={onToggleParticipantsCollapse}
+              choices={session.choices}
+              allChosen={allChosen}
               revealed={session.revealed}
             />
           </div>

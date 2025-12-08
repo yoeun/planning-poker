@@ -109,7 +109,7 @@ export default function VotingCards({
         </h2>
         {revealed && (
           <p className="text-gray-600 text-sm">
-            You can change your choice below.
+            You can still change your choice below.
           </p>
         )}
       </div>
@@ -187,11 +187,12 @@ export default function VotingCards({
         <div className="pt-6 border-t border-gray-200">
           {allChosen ? (
             <p className="text-gray-600 text-sm mb-4 text-center">
-              All participants have made their choices!
+              All participants have voted!
             </p>
           ) : (
-            <p className="text-amber-600 text-sm mb-4 text-center">
-              {chosenCount} of {totalUsers} participants have chosen. You can reveal choices manually.
+            <p className="text-gray-400 text-sm mb-4 text-center">
+              {chosenCount} of {totalUsers} participants have voted.<br/ >
+              Voting ends when all participants have voted.
             </p>
           )}
           <button
