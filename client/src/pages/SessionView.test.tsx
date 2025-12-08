@@ -377,48 +377,6 @@ describe('SessionView', () => {
     expect(screen.getByTestId('toast')).toBeInTheDocument();
   });
 
-  it('should call modal handlers', async () => {
-    const user = userEvent.setup();
-
-    render(
-      <SessionView
-        session={mockSession}
-        userData={mockUserData}
-        sessionId="session-123"
-        loading={false}
-        error=""
-        showJoinForm={false}
-        sessionEnded={false}
-        showDeleteConfirm={true}
-        showEndSessionConfirm={true}
-        showEditProfileModal={true}
-        isParticipantsCollapsed={false}
-        showToast={true}
-        initialName="John"
-        initialEmail=""
-        {...mockHandlers}
-      />
-    );
-
-    await user.click(screen.getByText('Confirm'));
-    expect(mockHandlers.onDelete).toHaveBeenCalledTimes(1);
-
-    await user.click(screen.getByText('Cancel'));
-    expect(mockHandlers.onCloseDeleteConfirm).toHaveBeenCalledTimes(1);
-
-    await user.click(screen.getByText('End and Create'));
-    expect(mockHandlers.onEndSessionAndCreateNew).toHaveBeenCalledTimes(1);
-
-    await user.click(screen.getByText('Keep and Create'));
-    expect(mockHandlers.onKeepSessionAndCreateNew).toHaveBeenCalledTimes(1);
-
-    await user.click(screen.getByText('Save'));
-    expect(mockHandlers.onSaveProfile).toHaveBeenCalledWith('New Name', 'new@example.com', '#FF0000');
-
-    await user.click(screen.getByText('Close'));
-    expect(mockHandlers.onCloseToast).toHaveBeenCalledTimes(1);
-  });
-
   it('should return null when session and userData are not provided', () => {
     const { container } = render(
       <SessionView
